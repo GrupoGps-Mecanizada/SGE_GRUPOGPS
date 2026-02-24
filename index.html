@@ -243,18 +243,7 @@
 
   <div class="bg-grid"></div>
 
-  <!-- Header -->
-  <div class="absolute top-6 left-6 md:top-8 md:left-8 z-50 pointer-events-none">
-    <div class="flex items-center gap-3 bg-white/80 backdrop-blur-md p-3 rounded-xl border border-slate-200 shadow-sm">
-      <div class="w-8 h-8 border border-slate-200 rounded-full flex items-center justify-center bg-slate-50">
-        <div class="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
-      </div>
-      <div>
-        <h1 class="text-xs md:text-sm font-bold tracking-[0.2em] text-slate-800">GRUPO GPS</h1>
-        <p class="text-[9px] md:text-[10px] text-slate-500 tracking-widest font-mono">SYSTEM: ONLINE</p>
-      </div>
-    </div>
-  </div>
+
 
   <!-- Main Application Area -->
   <div id="app">
@@ -263,33 +252,25 @@
 
     <!-- SGE Center -->
     <div class="center-logo">
-      <div class="center-image-wrapper" style="width: 220px; height: 220px;" onclick="resetHub()">
+      <div class="center-image-wrapper border-black" style="width: 170px; height: 170px;" onclick="resetHub()">
         <!-- Soft rings around logo -->
         <div class="absolute inset-0 rounded-full border border-slate-100" style="transform: scale(1.10);"></div>
-        <div class="absolute inset-0 rounded-full border border-slate-200 border-dashed"
+        <div class="absolute inset-0 rounded-full border border-black border-dashed"
           style="transform: scale(1.20); animation: spin 60s linear infinite;"></div>
 
-        <img src="./public/logo-sge.png" alt="SGE Logo" class="center-image" style="width: 180px; height: 180px;"
-          onerror="this.src='logo-sge.png'">
+        <img src="./LOGO/LOGO SEM FUNDO.png" alt="SGE Logo" class="center-image"
+          style="width: 350px; height: 350px; object-fit: contain; max-width: none;"
+          onerror="this.src='./public/logo-sge.png'">
       </div>
-
-      <p
-        class="mt-20 text-[7px] md:text-[9px] tracking-[0.2em] md:tracking-[0.3em] text-slate-400 whitespace-nowrap uppercase font-semibold bg-white/80 backdrop-blur-sm px-4 py-1.5 rounded-full border border-slate-100 shadow-sm relative z-40">
-        Sistemas de Gerenciamento<br>Para Empresas
-      </p>
     </div>
 
     <div id="nodes-container"></div>
   </div>
 
-  <!-- Footer Information -->
-  <div class="absolute bottom-8 left-0 w-full text-center pointer-events-none z-50">
-    <div class="inline-block px-6 py-2 rounded-full bg-white/90 backdrop-blur-sm border border-slate-200 shadow-sm">
-      <p id="footer-text"
-        class="text-[10px] md:text-xs text-slate-500 uppercase tracking-[0.2em] md:tracking-[0.3em] font-mono font-medium">
-        Aguardando Seleção de Módulo
-      </p>
-    </div>
+  <div class="absolute bottom-6 left-0 w-full text-center pointer-events-none z-50">
+    <p class="text-[10px] md:text-xs text-slate-400/80 font-mono tracking-widest uppercase">
+      Desenvolvido por Warlison Abreu - Grupo GPS
+    </p>
   </div>
 
   <script>
@@ -340,7 +321,6 @@
     // Elements
     const svgLayer = document.getElementById('svg-layer');
     const nodesContainer = document.getElementById('nodes-container');
-    const footerText = document.getElementById('footer-text');
 
     // Draw an orthogonal/straight line (cornered) from parent to child
     function createOrthogonalConnection(x1, y1, x2, y2, color, id) {
@@ -409,12 +389,12 @@
         node.style.boxShadow = `0 4px 15px ${data.color}40`;
         node.style.transform = 'translate(-50%, -50%) scale(1.1)';
       } else {
-        node.style.borderColor = '#cbd5e1';
-        node.style.boxShadow = '0 4px 10px rgba(0,0,0,0.05)';
+        node.style.borderColor = data.color;
+        node.style.boxShadow = `0 4px 10px ${data.color}20`;
         node.style.opacity = isDimmed ? '0.4' : '1';
       }
 
-      node.innerHTML = `<i data-feather="${data.icon}" style="color: ${isActive ? data.color : '#64748b'};" class="w-7 h-7 transition-colors duration-300"></i>`;
+      node.innerHTML = `<i data-feather="${data.icon}" style="color: ${data.color};" class="w-7 h-7 transition-colors duration-300"></i>`;
 
       node.onclick = (e) => {
         e.stopPropagation();
@@ -433,7 +413,7 @@
       if (isActive) {
         label.innerHTML = `<span class="text-[10px] md:text-[11px] font-bold tracking-widest uppercase bg-white border px-4 py-1.5 rounded-full shadow-sm" style="color: ${data.color}; border-color: ${data.color}">${data.category}</span>`;
       } else {
-        label.innerHTML = `<span class="text-[10px] md:text-[11px] font-semibold tracking-widest uppercase bg-slate-50 border border-slate-200 px-4 py-1.5 rounded-full text-slate-500 shadow-sm">${data.category}</span>`;
+        label.innerHTML = `<span class="text-[10px] md:text-[11px] font-semibold tracking-widest uppercase bg-white border px-4 py-1.5 rounded-full shadow-sm" style="color: ${data.color}; border-color: ${data.color}40;">${data.category}</span>`;
       }
 
       nodesContainer.appendChild(label);
@@ -487,7 +467,7 @@
       const logoY = dimensions.h * 0.25; // SGE Logo at 25% height from top
 
       // SGE Logo bottom anchor point for drawing lines
-      const logoBottomAnchorY = logoY + 115; // Increased distance because logo wrapper is bigger (220px)
+      const logoBottomAnchorY = logoY + 95; // Adjusted distance corresponding to 170px wrapper size
 
       // Category Level Y
       const categoryY = logoY + 230; // Increased spacing so nodes fall cleanly below bigger logo
@@ -504,16 +484,13 @@
         'seg': cx + xOffset       // Right
       };
 
-      // Update footer text
-      footerText.innerText = activeCategory ? "CLIQUE NO MÓDULO NOVAMENTE PARA RETORNAR AOS MÓDULOS" : "SELECIONE UM MÓDULO PARA EXPANDIR";
-
       // Render Categories
       menuData.forEach((cat) => {
         const catX = xPositions[cat.id];
         const catY = categoryY;
 
         // 1. Connection from SGE Logo down to this category (Orthogonal Routing)
-        const lineColor = (activeCategory === cat.id) ? cat.color : '#cbd5e1';
+        const lineColor = (activeCategory === cat.id || activeCategory === null) ? cat.color : '#cbd5e1';
         createOrthogonalConnection(cx, logoBottomAnchorY, catX, catY - 35, lineColor, cat.id);
 
         // 2. Render Main Category Node
