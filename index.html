@@ -236,6 +236,49 @@
         transform: scale(1.3) rotate(360deg);
       }
     }
+
+    /* Base Logo Sizes */
+    .center-image-wrapper {
+      width: 190px;
+      height: 190px;
+    }
+
+    .center-image {
+      width: 270px;
+      height: 270px;
+      object-fit: contain;
+      max-width: none;
+    }
+
+    /* Responsive Queries */
+    @media (max-width: 768px) {
+      .center-image-wrapper {
+        width: 130px;
+        height: 130px;
+      }
+
+      .center-image {
+        width: 180px;
+        height: 180px;
+      }
+
+      .sub-item-row {
+        width: 200px;
+      }
+
+      .sub-item-text {
+        font-size: 11px;
+      }
+
+      .center-logo p {
+        font-size: 6px;
+        /* text shrinking */
+      }
+
+      h1 {
+        font-size: 11px;
+      }
+    }
   </style>
 </head>
 
@@ -252,14 +295,13 @@
 
     <!-- SGE Center -->
     <div class="center-logo">
-      <div class="center-image-wrapper border-black" style="width: 170px; height: 170px;" onclick="resetHub()">
+      <div class="center-image-wrapper border-black" onclick="resetHub()">
         <!-- Soft rings around logo -->
         <div class="absolute inset-0 rounded-full border border-slate-100" style="transform: scale(1.10);"></div>
         <div class="absolute inset-0 rounded-full border border-black border-dashed"
           style="transform: scale(1.20); animation: spin 60s linear infinite;"></div>
 
         <img src="./LOGO/LOGO SEM FUNDO.png" alt="SGE Logo" class="center-image"
-          style="width: 350px; height: 350px; object-fit: contain; max-width: none;"
           onerror="this.src='./public/logo-sge.png'">
       </div>
     </div>
@@ -279,7 +321,7 @@
       {
         id: 'log',
         category: "LOGÍSTICA",
-        icon: "truck",
+        icon: "package",
         color: "#d97706", // Amber 600
         items: [
           { name: "Almoxarifado", icon: "box", url: "almoxarifado.html" },
@@ -425,8 +467,10 @@
       const container = document.createElement('div');
       container.className = 'sub-items-container';
       container.style.left = x + 'px';
-      // Start rendering sub-items exactly beneath the category label (e.g. y + 90)
-      const topOffset = startY + 95;
+
+      // Adjust spacing vertically based on mobile view
+      const isMobile = window.innerWidth < 768;
+      const topOffset = startY + (isMobile ? 85 : 95);
       container.style.top = topOffset + 'px';
 
       cat.items.forEach((item, idx) => {
@@ -463,26 +507,46 @@
       dimensions = { w: window.innerWidth, h: window.innerHeight };
 
       // Core coordinate settings (The "Tree" Layout)
+      const isMobile = dimensions.w < 768;
       const cx = dimensions.w / 2;
-      const logoY = dimensions.h * 0.25; // SGE Logo at 25% height from top
+
+      const logoY = dimensions.h * (isMobile ? 0.18 : 0.25); // SGE Logo height
 
       // SGE Logo bottom anchor point for drawing lines
-      const logoBottomAnchorY = logoY + 95; // Adjusted distance corresponding to 170px wrapper size
+      const wrapperSize = isMobile ? 130 : 190;
+      const logoBottomAnchorY = logoY + (wrapperSize / 2) + 10;
 
       // Category Level Y
-      const categoryY = logoY + 230; // Increased spacing so nodes fall cleanly below bigger logo
+      const categoryY = logoBottomAnchorY + (isMobile ? 65 : 120);
 
       // X Distances for Left, Center, Right columns
-      // If screen is narrow (mobile), stack them closer or adapt. For now, strict fixed horizontal spacing.
       let xOffset = 300;
-      if (dimensions.w < 1024) xOffset = 180;
-      if (dimensions.w < 600) xOffset = 120; // Mobile squeeze
+      if (dimensions.w < 1024) xOffset = 220;
+      if (isMobile) xOffset = 100; // Mobile squeeze
 
-      const xPositions = {
-        'log': cx - xOffset,      // Left
-        'admin': cx,              // Center
-        'seg': cx + xOffset       // Right
-      };
+      let xPositions = {};
+
+      if (isMobile && activeCategory) {
+        // Smart Logical layout for mobile:
+        // Move the active category to the center, push others away
+        const cats = menuData.map(c => c.id);
+        const activeIdx = cats.indexOf(activeCategory);
+
+        cats.forEach((catId, idx) => {
+          if (catId === activeCategory) {
+            xPositions[catId] = cx; // Center active
+          } else {
+            xPositions[catId] = (idx < activeIdx) ? cx - 140 : cx + 140; // Push inactive off-center
+          }
+        });
+      } else {
+        // Default normal layout
+        xPositions = {
+          'log': cx - xOffset,      // Left
+          'admin': cx,              // Center
+          'seg': cx + xOffset       // Right
+        };
+      }
 
       // Render Categories
       menuData.forEach((cat) => {
