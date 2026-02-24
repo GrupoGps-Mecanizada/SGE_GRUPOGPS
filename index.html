@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SGE - Hub</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Feather Icons for lightweight iconography -->
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f8fafc;
+      /* Light Slate 50 */
+      color: #334155;
+      /* Slate 700 */
+      overflow-x: hidden;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Subtle Light Background Grid */
+    .bg-grid {
+      position: absolute;
+      inset: 0;
+      opacity: 0.5;
+      background-image: linear-gradient(#e2e8f0 1px, transparent 1px), linear-gradient(90deg, #e2e8f0 1px, transparent 1px);
+      background-size: 40px 40px;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* Node Animations & Layout */
+    .node-container {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      z-index: 20;
+      background-color: #ffffff;
+    }
+
+    .node-container:hover {
+      transform: translate(-50%, -50%) scale(1.08);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    }
+
+    .node-label {
+      position: absolute;
+      transform: translateX(-50%);
+      z-index: 30;
+      white-space: nowrap;
+      transition: opacity 0.3s ease;
+    }
+
+    /* SGE Center Logo */
+    .center-logo {
+      position: absolute;
+      top: 25%;
+      /* Fixed top distance */
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .center-image-wrapper {
+      position: relative;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      cursor: pointer;
+      z-index: 10;
+    }
+
+    .center-image-wrapper:hover {
+      transform: scale(1.05);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+    }
+
+    .center-image {
+      object-fit: contain;
+      z-index: 20;
+    }
+
+    /* Connections */
+    svg.connection-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 4;
+      overflow: visible;
+    }
+
+    /* Straight, sharp lines instead of glowing lines */
+    .line-bg {
+      opacity: 0.8;
+      stroke-width: 1.5;
+      transition: stroke 0.5s ease;
+      stroke-linecap: square;
+      stroke-linejoin: miter;
+    }
+
+    /* App Container for dynamic rendering */
+    #app {
+      position: relative;
+      width: 100vw;
+      min-height: 100vh;
+      z-index: 10;
+      padding-bottom: 100px;
+    }
+
+    /* Pulse Animations */
+    .pulse-dot {
+      position: absolute;
+      border-radius: 50%;
+      animation: ortho-travel-2 3s linear infinite;
+      filter: drop-shadow(0 0 6px currentcolor);
+      z-index: 5;
+    }
+
+    /* Animated traveling dot over path */
+    .animated-dot {
+      offset-path: var(--path-route);
+      animation: path-travel 3s linear infinite;
+      position: absolute;
+      border-radius: 50%;
+      width: 8px;
+      height: 8px;
+      z-index: 5;
+      filter: drop-shadow(0 0 5px currentcolor);
+      transform-origin: center;
+    }
+
+    @keyframes path-travel {
+      0% {
+        offset-distance: 0%;
+        opacity: 0;
+      }
+
+      5% {
+        opacity: 1;
+      }
+
+      95% {
+        opacity: 1;
+      }
+
+      100% {
+        offset-distance: 100%;
+        opacity: 0;
+      }
+    }
+
+    /* Category Sub-items list layout to ensure "esquadro" */
+    .sub-items-container {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      transform: translateX(-50%);
+      z-index: 15;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .sub-item-row {
+      display: flex;
+      align-items: center;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px 16px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+      transition: all 0.2s ease;
+      cursor: pointer;
+      width: 220px;
+      /* Fixed width for perfect alignment */
+    }
+
+    .sub-item-row:hover {
+      border-color: #3b82f6;
+      /* Blue border on hover */
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .sub-item-icon {
+      margin-right: 12px;
+      color: #64748b;
+      transition: color 0.2s ease;
+    }
+
+    .sub-item-row:hover .sub-item-icon {
+      color: #3b82f6;
+    }
+
+    .sub-item-text {
+      font-size: 13px;
+      font-weight: 600;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transition: color 0.2s ease;
+    }
+
+    .sub-item-row:hover .sub-item-text {
+      color: #0f172a;
+    }
+
+    /* Spin Animation mapped specifically for light view */
+    @keyframes spin {
+      100% {
+        transform: scale(1.3) rotate(360deg);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="bg-grid"></div>
+
+  <!-- Header -->
+  <div class="absolute top-6 left-6 md:top-8 md:left-8 z-50 pointer-events-none">
+    <div class="flex items-center gap-3 bg-white/80 backdrop-blur-md p-3 rounded-xl border border-slate-200 shadow-sm">
+      <div class="w-8 h-8 border border-slate-200 rounded-full flex items-center justify-center bg-slate-50">
+        <div class="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+      </div>
+      <div>
+        <h1 class="text-xs md:text-sm font-bold tracking-[0.2em] text-slate-800">GRUPO GPS</h1>
+        <p class="text-[9px] md:text-[10px] text-slate-500 tracking-widest font-mono">SYSTEM: ONLINE</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Application Area -->
+  <div id="app">
+    <!-- SVG Layer for connections -->
+    <svg id="svg-layer" class="connection-layer"></svg>
+
+    <!-- SGE Center -->
+    <div class="center-logo">
+      <div class="center-image-wrapper" style="width: 220px; height: 220px;" onclick="resetHub()">
+        <!-- Soft rings around logo -->
+        <div class="absolute inset-0 rounded-full border border-slate-100" style="transform: scale(1.10);"></div>
+        <div class="absolute inset-0 rounded-full border border-slate-200 border-dashed"
+          style="transform: scale(1.20); animation: spin 60s linear infinite;"></div>
+
+        <img src="./public/logo-sge.png" alt="SGE Logo" class="center-image" style="width: 180px; height: 180px;"
+          onerror="this.src='logo-sge.png'">
+      </div>
+
+      <p
+        class="mt-20 text-[7px] md:text-[9px] tracking-[0.2em] md:tracking-[0.3em] text-slate-400 whitespace-nowrap uppercase font-semibold bg-white/80 backdrop-blur-sm px-4 py-1.5 rounded-full border border-slate-100 shadow-sm relative z-40">
+        Sistemas de Gerenciamento<br>Para Empresas
+      </p>
+    </div>
+
+    <div id="nodes-container"></div>
+  </div>
+
+  <!-- Footer Information -->
+  <div class="absolute bottom-8 left-0 w-full text-center pointer-events-none z-50">
+    <div class="inline-block px-6 py-2 rounded-full bg-white/90 backdrop-blur-sm border border-slate-200 shadow-sm">
+      <p id="footer-text"
+        class="text-[10px] md:text-xs text-slate-500 uppercase tracking-[0.2em] md:tracking-[0.3em] font-mono font-medium">
+        Aguardando Seleção de Módulo
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // --- Data Definitions ---
+    const menuData = [
+      {
+        id: 'log',
+        category: "LOGÍSTICA",
+        icon: "truck",
+        color: "#d97706", // Amber 600
+        items: [
+          { name: "Almoxarifado", icon: "box", url: "almoxarifado.html" },
+          { name: "Equipamentos", icon: "tool", url: "equipamentos.html" },
+          { name: "Produtividade", icon: "bar-chart-2", url: "produtividade.html" },
+          { name: "Controle de Frota", icon: "navigation", url: "frota.html" },
+          { name: "Manutenções", icon: "settings", url: "manutencao.html" },
+        ]
+      },
+      {
+        id: 'admin',
+        category: "ADMINISTRATIVO",
+        icon: "users",
+        color: "#2563eb", // Blue 600
+        items: [
+          { name: "Controle Efetivo", icon: "users", url: "efetivo.html" },
+          { name: "Controle Presença", icon: "clock", url: "presenca.html" },
+          { name: "Relatório Turno", icon: "file-text", url: "../Relat-rio-Turno---Oficial/index.html" },
+          { name: "Horas Extras", icon: "calendar", url: "horas-extras.html" },
+        ]
+      },
+      {
+        id: 'seg',
+        category: "SEGURANÇA",
+        icon: "shield",
+        color: "#059669", // Emerald 600
+        items: [
+          { name: "Etilômetro Digital", icon: "activity", url: "etilometro.html" },
+          { name: "Histórico Advert.", icon: "alert-triangle", url: "advertencia.html" },
+          { name: "Treinamentos", icon: "award", url: "treinamentos.html" },
+        ]
+      }
+    ];
+
+    // State
+    let activeCategory = null;
+    let dimensions = { w: window.innerWidth, h: window.innerHeight };
+
+    // Elements
+    const svgLayer = document.getElementById('svg-layer');
+    const nodesContainer = document.getElementById('nodes-container');
+    const footerText = document.getElementById('footer-text');
+
+    // Draw an orthogonal/straight line (cornered) from parent to child
+    function createOrthogonalConnection(x1, y1, x2, y2, color, id) {
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+
+      // Draw a straight line down, then horizontal, then down (ortho-routing)
+      // Midpoint Y for the horizontal turn
+      const midY = y1 + (y2 - y1) / 2;
+
+      // M = move to, L = line to
+      const d = `M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}`;
+
+      path.setAttribute('d', d);
+      path.setAttribute('stroke', color);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('class', `line-bg conn-${id}`);
+
+      svgLayer.appendChild(path);
+
+      // Add the animated traveling dot on this path!
+      // We use standard div that maps to offset-path
+      const dot = document.createElement('div');
+      dot.className = `animated-dot conn-${id}`;
+      dot.style.backgroundColor = color;
+      dot.style.setProperty('--path-route', `path('${d}')`);
+      nodesContainer.appendChild(dot);
+    }
+
+    // Draw straight vertical line (for sub-items dropdown)
+    function createVerticalConnection(x, y1, y2, color, id) {
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      const d = `M ${x} ${y1} L ${x} ${y2}`;
+      line.setAttribute('d', d);
+      line.setAttribute('stroke', color);
+      line.setAttribute('fill', 'none');
+      line.setAttribute('class', `line-bg conn-${id}`);
+
+      svgLayer.appendChild(line);
+
+      // Add mini pulse dot for vertical drops
+      const dot = document.createElement('div');
+      dot.className = `animated-dot conn-${id}`;
+      dot.style.backgroundColor = color;
+      dot.style.width = '5px';
+      dot.style.height = '5px';
+      dot.style.animationDuration = '1.5s'; // Faster on short drops
+      dot.style.setProperty('--path-route', `path('${d}')`);
+      nodesContainer.appendChild(dot);
+    }
+
+    function createCategoryNode(x, y, data, catId) {
+      const isActive = activeCategory === catId;
+      const isDimmed = activeCategory !== null && !isActive;
+
+      // Main Node Circle
+      const node = document.createElement('div');
+      node.className = `node-container item-${catId}`;
+      node.style.left = x + 'px';
+      node.style.top = y + 'px';
+      node.style.width = '70px';
+      node.style.height = '70px';
+      node.style.border = '2px solid';
+
+      if (isActive) {
+        node.style.borderColor = data.color;
+        node.style.boxShadow = `0 4px 15px ${data.color}40`;
+        node.style.transform = 'translate(-50%, -50%) scale(1.1)';
+      } else {
+        node.style.borderColor = '#cbd5e1';
+        node.style.boxShadow = '0 4px 10px rgba(0,0,0,0.05)';
+        node.style.opacity = isDimmed ? '0.4' : '1';
+      }
+
+      node.innerHTML = `<i data-feather="${data.icon}" style="color: ${isActive ? data.color : '#64748b'};" class="w-7 h-7 transition-colors duration-300"></i>`;
+
+      node.onclick = (e) => {
+        e.stopPropagation();
+        activeCategory = isActive ? null : catId;
+        renderHub();
+      };
+
+      // Main Label (Pill under node)
+      const label = document.createElement('div');
+      label.className = `node-label mt-5`;
+      label.style.left = x + 'px';
+      label.style.top = (y + 35) + 'px';
+      label.style.opacity = isDimmed ? '0.4' : '1';
+
+      // Different label styling based on active state
+      if (isActive) {
+        label.innerHTML = `<span class="text-[10px] md:text-[11px] font-bold tracking-widest uppercase bg-white border px-4 py-1.5 rounded-full shadow-sm" style="color: ${data.color}; border-color: ${data.color}">${data.category}</span>`;
+      } else {
+        label.innerHTML = `<span class="text-[10px] md:text-[11px] font-semibold tracking-widest uppercase bg-slate-50 border border-slate-200 px-4 py-1.5 rounded-full text-slate-500 shadow-sm">${data.category}</span>`;
+      }
+
+      nodesContainer.appendChild(label);
+      nodesContainer.appendChild(node);
+    }
+
+    // Creates the vertically aligned column of sub-items
+    function createSubItemsList(x, startY, cat) {
+      const container = document.createElement('div');
+      container.className = 'sub-items-container';
+      container.style.left = x + 'px';
+      // Start rendering sub-items exactly beneath the category label (e.g. y + 90)
+      const topOffset = startY + 95;
+      container.style.top = topOffset + 'px';
+
+      cat.items.forEach((item, idx) => {
+        const row = document.createElement('div');
+        row.className = 'sub-item-row';
+
+        // Content
+        row.innerHTML = `
+                    <i data-feather="${item.icon}" class="w-4 h-4 sub-item-icon"></i>
+                    <span class="sub-item-text">${item.name}</span>
+                `;
+
+        row.onclick = (e) => {
+          e.stopPropagation();
+          if (item.url) window.location.href = item.url;
+        };
+
+        container.appendChild(row);
+      });
+
+      nodesContainer.appendChild(container);
+
+      // Draw a single straight line from the category label down behind the sub-items for visual "spine" connection
+      const totalHeight = (cat.items.length * (40 + 16)); // approx height of each row + gap
+      createVerticalConnection(x, startY + 50, topOffset + totalHeight - 40, '#e2e8f0', `${cat.id}-spine`);
+    }
+
+
+    function renderHub() {
+      // Clear current renders
+      svgLayer.innerHTML = '';
+      nodesContainer.innerHTML = '';
+
+      dimensions = { w: window.innerWidth, h: window.innerHeight };
+
+      // Core coordinate settings (The "Tree" Layout)
+      const cx = dimensions.w / 2;
+      const logoY = dimensions.h * 0.25; // SGE Logo at 25% height from top
+
+      // SGE Logo bottom anchor point for drawing lines
+      const logoBottomAnchorY = logoY + 115; // Increased distance because logo wrapper is bigger (220px)
+
+      // Category Level Y
+      const categoryY = logoY + 230; // Increased spacing so nodes fall cleanly below bigger logo
+
+      // X Distances for Left, Center, Right columns
+      // If screen is narrow (mobile), stack them closer or adapt. For now, strict fixed horizontal spacing.
+      let xOffset = 300;
+      if (dimensions.w < 1024) xOffset = 180;
+      if (dimensions.w < 600) xOffset = 120; // Mobile squeeze
+
+      const xPositions = {
+        'log': cx - xOffset,      // Left
+        'admin': cx,              // Center
+        'seg': cx + xOffset       // Right
+      };
+
+      // Update footer text
+      footerText.innerText = activeCategory ? "CLIQUE NO MÓDULO NOVAMENTE PARA RETORNAR AOS MÓDULOS" : "SELECIONE UM MÓDULO PARA EXPANDIR";
+
+      // Render Categories
+      menuData.forEach((cat) => {
+        const catX = xPositions[cat.id];
+        const catY = categoryY;
+
+        // 1. Connection from SGE Logo down to this category (Orthogonal Routing)
+        const lineColor = (activeCategory === cat.id) ? cat.color : '#cbd5e1';
+        createOrthogonalConnection(cx, logoBottomAnchorY, catX, catY - 35, lineColor, cat.id);
+
+        // 2. Render Main Category Node
+        createCategoryNode(catX, catY, cat, cat.id);
+
+        // 3. Render Sub Items (Only if Active) IN A PERFECT COLUMN
+        if (activeCategory === cat.id) {
+          createSubItemsList(catX, catY, cat);
+        }
+      });
+
+      // Re-bind icons
+      feather.replace();
+    }
+
+    function resetHub() {
+      activeCategory = null;
+      renderHub();
+    }
+
+    // Initialization
+    window.onload = () => {
+      renderHub();
+    };
+
+    window.onresize = () => {
+      renderHub();
+    };
+
+  </script>
+</body>
+
+</html>
