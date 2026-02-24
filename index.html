@@ -5,7 +5,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SGE - Hub</title>
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Feather Icons for lightweight iconography -->
   <script src="https://unpkg.com/feather-icons"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
@@ -13,7 +15,9 @@
     body {
       font-family: 'Inter', sans-serif;
       background-color: #f8fafc;
+      /* Light Slate 50 */
       color: #334155;
+      /* Slate 700 */
       overflow-x: hidden;
       margin: 0;
       padding: 0;
@@ -24,8 +28,9 @@
       font-family: 'JetBrains Mono', monospace;
     }
 
+    /* Subtle Light Background Grid */
     .bg-grid {
-      position: fixed;
+      position: absolute;
       inset: 0;
       opacity: 0.5;
       background-image: linear-gradient(#e2e8f0 1px, transparent 1px), linear-gradient(90deg, #e2e8f0 1px, transparent 1px);
@@ -34,6 +39,82 @@
       pointer-events: none;
     }
 
+    /* Node Animations & Layout */
+    .node-container {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      z-index: 20;
+      background-color: #ffffff;
+    }
+
+    .node-container:hover {
+      transform: translate(-50%, -50%) scale(1.08);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    }
+
+    .node-label {
+      position: absolute;
+      transform: translateX(-50%);
+      z-index: 30;
+      white-space: nowrap;
+      transition: opacity 0.3s ease;
+    }
+
+    /* SGE Center Logo */
+    .center-logo {
+      position: absolute;
+      top: 25%;
+      /* Fixed top distance */
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .center-image-wrapper {
+      position: relative;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      cursor: pointer;
+      z-index: 10;
+    }
+
+    .center-image-wrapper:hover {
+      transform: scale(1.05);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+    }
+
+    .center-image {
+      object-fit: contain;
+      z-index: 20;
+    }
+
+    /* Connections */
+    svg.connection-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 4;
+      overflow: visible;
+    }
+
+    /* Straight, sharp lines instead of glowing lines */
     .line-bg {
       opacity: 0.8;
       stroke-width: 1.5;
@@ -42,15 +123,34 @@
       stroke-linejoin: miter;
     }
 
+    /* App Container for dynamic rendering */
+    #app {
+      position: relative;
+      width: 100vw;
+      min-height: 100vh;
+      z-index: 10;
+      padding-bottom: 100px;
+    }
+
+    /* Pulse Animations */
+    .pulse-dot {
+      position: absolute;
+      border-radius: 50%;
+      animation: ortho-travel-2 3s linear infinite;
+      filter: drop-shadow(0 0 6px currentcolor);
+      z-index: 5;
+    }
+
+    /* Animated traveling dot over path */
     .animated-dot {
       offset-path: var(--path-route);
       animation: path-travel 3s linear infinite;
       position: absolute;
       border-radius: 50%;
-      width: 6px;
-      height: 6px;
+      width: 8px;
+      height: 8px;
       z-index: 5;
-      filter: drop-shadow(0 0 3px currentcolor);
+      filter: drop-shadow(0 0 5px currentcolor);
       transform-origin: center;
     }
 
@@ -74,6 +174,63 @@
       }
     }
 
+    /* Category Sub-items list layout to ensure "esquadro" */
+    .sub-items-container {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      transform: translateX(-50%);
+      z-index: 15;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .sub-item-row {
+      display: flex;
+      align-items: center;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px 16px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+      transition: all 0.2s ease;
+      cursor: pointer;
+      width: 220px;
+      /* Fixed width for perfect alignment */
+    }
+
+    .sub-item-row:hover {
+      border-color: #3b82f6;
+      /* Blue border on hover */
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .sub-item-icon {
+      margin-right: 12px;
+      color: #64748b;
+      transition: color 0.2s ease;
+    }
+
+    .sub-item-row:hover .sub-item-icon {
+      color: #3b82f6;
+    }
+
+    .sub-item-text {
+      font-size: 13px;
+      font-weight: 600;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transition: color 0.2s ease;
+    }
+
+    .sub-item-row:hover .sub-item-text {
+      color: #0f172a;
+    }
+
+    /* Spin Animation mapped specifically for light view */
     @keyframes spin {
       100% {
         transform: scale(1.3) rotate(360deg);
@@ -83,46 +240,47 @@
 </head>
 
 <body>
+
   <div class="bg-grid"></div>
 
-  <div id="app"
-    class="relative w-full min-h-screen z-10 flex flex-col items-center pt-8 md:pt-16 pb-24 overflow-x-hidden">
-    <svg id="svg-layer" class="absolute top-0 left-0 w-full h-full pointer-events-none z-0"
-      style="overflow: visible;"></svg>
 
-    <div id="logo-section" class="relative z-20 flex flex-col items-center mb-8 md:mb-16 mt-4 md:mt-8">
-      <div id="logo-wrapper"
-        class="border-black relative flex items-center justify-center rounded-full bg-white z-10 transition-transform cursor-pointer hover:scale-105 shadow-md w-[140px] h-[140px] md:w-[220px] md:h-[220px]"
-        onclick="resetHub()">
+
+  <!-- Main Application Area -->
+  <div id="app">
+    <!-- SVG Layer for connections -->
+    <svg id="svg-layer" class="connection-layer"></svg>
+
+    <!-- SGE Center -->
+    <div class="center-logo">
+      <div class="center-image-wrapper border-black" style="width: 170px; height: 170px;" onclick="resetHub()">
+        <!-- Soft rings around logo -->
         <div class="absolute inset-0 rounded-full border border-slate-100" style="transform: scale(1.10);"></div>
         <div class="absolute inset-0 rounded-full border border-black border-dashed"
           style="transform: scale(1.20); animation: spin 60s linear infinite;"></div>
-        <img src="./LOGO/LOGO SEM FUNDO.png" alt="SGE Logo"
-          class="object-contain w-[180px] h-[180px] md:w-[280px] md:h-[280px] max-w-none z-20"
+
+        <img src="./LOGO/LOGO SEM FUNDO.png" alt="SGE Logo" class="center-image"
+          style="width: 350px; height: 350px; object-fit: contain; max-width: none;"
           onerror="this.src='./public/logo-sge.png'">
       </div>
     </div>
 
-    <!-- Categories Row (Flex) -->
-    <div id="categories-row"
-      class="relative z-20 flex flex-row items-start justify-center gap-4 md:gap-20 w-full px-2 md:px-6 mb-8 transition-all duration-500">
-    </div>
-
-    <!-- Sub Items Row -->
-    <div id="sub-items-row" class="relative z-20 flex flex-col items-center gap-3 w-full px-4 min-h-[300px]">
-    </div>
+    <div id="nodes-container"></div>
   </div>
 
-  <div class="fixed bottom-4 left-0 w-full text-center pointer-events-none z-50">
-    <p class="text-[9px] md:text-xs text-slate-400/80 font-mono tracking-widest uppercase">
+  <div class="absolute bottom-6 left-0 w-full text-center pointer-events-none z-50">
+    <p class="text-[10px] md:text-xs text-slate-400/80 font-mono tracking-widest uppercase">
       Desenvolvido por Warlison Abreu - Grupo GPS
     </p>
   </div>
 
   <script>
+    // --- Data Definitions ---
     const menuData = [
       {
-        id: 'log', category: "LOGÍSTICA", icon: "package", color: "#d97706",
+        id: 'log',
+        category: "LOGÍSTICA",
+        icon: "package",
+        color: "#d97706", // Amber 600
         items: [
           { name: "Almoxarifado", icon: "box", url: "almoxarifado.html" },
           { name: "Equipamentos", icon: "tool", url: "equipamentos.html" },
@@ -132,7 +290,10 @@
         ]
       },
       {
-        id: 'admin', category: "ADMINISTRATIVO", icon: "users", color: "#2563eb",
+        id: 'admin',
+        category: "ADMINISTRATIVO",
+        icon: "users",
+        color: "#2563eb", // Blue 600
         items: [
           { name: "Controle Efetivo", icon: "users", url: "efetivo.html" },
           { name: "Controle Presença", icon: "clock", url: "presenca.html" },
@@ -141,7 +302,10 @@
         ]
       },
       {
-        id: 'seg', category: "SEGURANÇA", icon: "shield", color: "#059669",
+        id: 'seg',
+        category: "SEGURANÇA",
+        icon: "shield",
+        color: "#059669", // Emerald 600
         items: [
           { name: "Etilômetro Digital", icon: "activity", url: "etilometro.html" },
           { name: "Histórico Advert.", icon: "alert-triangle", url: "advertencia.html" },
@@ -150,41 +314,42 @@
       }
     ];
 
+    // State
     let activeCategory = null;
-    let resizeTimer;
+    let dimensions = { w: window.innerWidth, h: window.innerHeight };
 
-    function getRelCoords(el) {
-      const app = document.getElementById('app');
-      if (!app || !el) return null;
-      const appRect = app.getBoundingClientRect();
-      const rect = el.getBoundingClientRect();
-      return {
-        left: rect.left - appRect.left,
-        top: rect.top - appRect.top,
-        width: rect.width,
-        height: rect.height,
-        centerX: (rect.left - appRect.left) + (rect.width / 2),
-        centerY: (rect.top - appRect.top) + (rect.height / 2)
-      };
-    }
+    // Elements
+    const svgLayer = document.getElementById('svg-layer');
+    const nodesContainer = document.getElementById('nodes-container');
 
+    // Draw an orthogonal/straight line (cornered) from parent to child
     function createOrthogonalConnection(x1, y1, x2, y2, color, id) {
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+
+      // Draw a straight line down, then horizontal, then down (ortho-routing)
+      // Midpoint Y for the horizontal turn
       const midY = y1 + (y2 - y1) / 2;
+
+      // M = move to, L = line to
       const d = `M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}`;
+
       path.setAttribute('d', d);
       path.setAttribute('stroke', color);
       path.setAttribute('fill', 'none');
       path.setAttribute('class', `line-bg conn-${id}`);
-      document.getElementById('svg-layer').appendChild(path);
 
+      svgLayer.appendChild(path);
+
+      // Add the animated traveling dot on this path!
+      // We use standard div that maps to offset-path
       const dot = document.createElement('div');
       dot.className = `animated-dot conn-${id}`;
       dot.style.backgroundColor = color;
       dot.style.setProperty('--path-route', `path('${d}')`);
-      document.getElementById('app').appendChild(dot);
+      nodesContainer.appendChild(dot);
     }
 
+    // Draw straight vertical line (for sub-items dropdown)
     function createVerticalConnection(x, y1, y2, color, id) {
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       const d = `M ${x} ${y1} L ${x} ${y2}`;
@@ -192,137 +357,187 @@
       line.setAttribute('stroke', color);
       line.setAttribute('fill', 'none');
       line.setAttribute('class', `line-bg conn-${id}`);
-      document.getElementById('svg-layer').appendChild(line);
 
+      svgLayer.appendChild(line);
+
+      // Add mini pulse dot for vertical drops
       const dot = document.createElement('div');
       dot.className = `animated-dot conn-${id}`;
       dot.style.backgroundColor = color;
-      dot.style.width = '4px';
-      dot.style.height = '4px';
-      dot.style.animationDuration = '1.5s';
+      dot.style.width = '5px';
+      dot.style.height = '5px';
+      dot.style.animationDuration = '1.5s'; // Faster on short drops
       dot.style.setProperty('--path-route', `path('${d}')`);
-      document.getElementById('app').appendChild(dot);
+      nodesContainer.appendChild(dot);
     }
 
-    function drawLines() {
-      const svgLayer = document.getElementById('svg-layer');
-      svgLayer.innerHTML = '';
-      document.querySelectorAll('.animated-dot').forEach(el => el.remove());
+    function createCategoryNode(x, y, data, catId) {
+      const isActive = activeCategory === catId;
+      const isDimmed = activeCategory !== null && !isActive;
 
-      const logoNode = document.getElementById('logo-wrapper');
-      const logoCoords = getRelCoords(logoNode);
-      if (!logoCoords) return;
+      // Main Node Circle
+      const node = document.createElement('div');
+      node.className = `node-container item-${catId}`;
+      node.style.left = x + 'px';
+      node.style.top = y + 'px';
+      node.style.width = '70px';
+      node.style.height = '70px';
+      node.style.border = '2px solid';
 
-      const startX = logoCoords.centerX;
-      const startY = logoCoords.centerY + (logoCoords.height / 2) * 1.30;
+      if (isActive) {
+        node.style.borderColor = data.color;
+        node.style.boxShadow = `0 4px 15px ${data.color}40`;
+        node.style.transform = 'translate(-50%, -50%) scale(1.1)';
+      } else {
+        node.style.borderColor = data.color;
+        node.style.boxShadow = `0 4px 10px ${data.color}20`;
+        node.style.opacity = isDimmed ? '0.4' : '1';
+      }
 
-      menuData.forEach((cat) => {
-        const col = document.getElementById(`cat-col-${cat.id}`);
-        if (!col || col.style.display === 'none') return;
+      node.innerHTML = `<i data-feather="${data.icon}" style="color: ${data.color};" class="w-7 h-7 transition-colors duration-300"></i>`;
 
-        const nodeEl = document.getElementById(`cat-node-${cat.id}`);
-        const nodeCoords = getRelCoords(nodeEl);
-        if (!nodeCoords) return;
+      node.onclick = (e) => {
+        e.stopPropagation();
+        activeCategory = isActive ? null : catId;
+        renderHub();
+      };
 
-        const endX = nodeCoords.centerX;
-        const endY = nodeCoords.top - 2;
+      // Main Label (Pill under node)
+      const label = document.createElement('div');
+      label.className = `node-label mt-5`;
+      label.style.left = x + 'px';
+      label.style.top = (y + 35) + 'px';
+      label.style.opacity = isDimmed ? '0.4' : '1';
 
-        const lineColor = (activeCategory === cat.id || activeCategory === null) ? cat.color : '#cbd5e1';
-        createOrthogonalConnection(startX, startY, endX, endY, lineColor, cat.id);
+      // Different label styling based on active state
+      if (isActive) {
+        label.innerHTML = `<span class="text-[10px] md:text-[11px] font-bold tracking-widest uppercase bg-white border px-4 py-1.5 rounded-full shadow-sm" style="color: ${data.color}; border-color: ${data.color}">${data.category}</span>`;
+      } else {
+        label.innerHTML = `<span class="text-[10px] md:text-[11px] font-semibold tracking-widest uppercase bg-white border px-4 py-1.5 rounded-full shadow-sm" style="color: ${data.color}; border-color: ${data.color}40;">${data.category}</span>`;
+      }
 
-        if (activeCategory === cat.id) {
-          const labelEl = document.getElementById(`cat-label-${cat.id}`);
-          const subRow = document.getElementById('sub-items-row');
-
-          if (labelEl && subRow && subRow.children.length > 0) {
-            const labelCoords = getRelCoords(labelEl);
-            const spineStartX = labelCoords.centerX;
-            const spineStartY = labelCoords.centerY + (labelCoords.height / 2) + 2;
-
-            const lastChild = subRow.lastElementChild;
-            const lastCoords = getRelCoords(lastChild);
-            const spineEndY = lastCoords.centerY;
-            createVerticalConnection(spineStartX, spineStartY, spineEndY, '#e2e8f0', `${cat.id}-spine`);
-          }
-        }
-      });
+      nodesContainer.appendChild(label);
+      nodesContainer.appendChild(node);
     }
 
-    function renderHub() {
-      const categoriesRow = document.getElementById('categories-row');
-      const subItemsRow = document.getElementById('sub-items-row');
-      const svgLayer = document.getElementById('svg-layer');
+    // Creates the vertically aligned column of sub-items
+    function createSubItemsList(x, startY, cat) {
+      const container = document.createElement('div');
+      container.className = 'sub-items-container';
+      container.style.left = x + 'px';
+      // Start rendering sub-items exactly beneath the category label (e.g. y + 90)
+      const topOffset = startY + 95;
+      container.style.top = topOffset + 'px';
 
-      categoriesRow.innerHTML = '';
-      subItemsRow.innerHTML = '';
-      svgLayer.innerHTML = '';
+      cat.items.forEach((item, idx) => {
+        const row = document.createElement('div');
+        row.className = 'sub-item-row';
 
-      menuData.forEach((cat) => {
-        const isActive = activeCategory === cat.id;
-        const isDimmed = activeCategory !== null && !isActive;
-        const isMobile = window.innerWidth < 768;
+        // Content
+        row.innerHTML = `
+                    <i data-feather="${item.icon}" class="w-4 h-4 sub-item-icon"></i>
+                    <span class="sub-item-text">${item.name}</span>
+                `;
 
-        if (isMobile && activeCategory && !isActive) {
-          return;
-        }
-
-        const col = document.createElement('div');
-        col.className = `flex flex-col items-center transition-all duration-500 ${isDimmed ? 'opacity-40 scale-95' : 'opacity-100 scale-100'}`;
-        col.id = `cat-col-${cat.id}`;
-
-        const node = document.createElement('div');
-        node.className = `flex items-center justify-center bg-white border-2 cursor-pointer transition-all duration-300 w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-3xl`;
-        node.id = `cat-node-${cat.id}`;
-
-        if (isActive) {
-          node.style.borderColor = cat.color;
-          node.style.boxShadow = `0 4px 15px ${cat.color}60`;
-          node.style.transform = 'scale(1.1)';
-        } else {
-          node.style.borderColor = cat.color;
-          node.style.boxShadow = `0 4px 10px ${cat.color}20`;
-        }
-
-        node.innerHTML = `<i data-feather="${cat.icon}" style="color: ${cat.color};" class="w-6 h-6 md:w-8 md:h-8"></i>`;
-        node.onclick = (e) => {
+        row.onclick = (e) => {
           e.stopPropagation();
-          activeCategory = isActive ? null : cat.id;
-          renderHub();
+          if (item.url) window.location.href = item.url;
         };
 
-        const label = document.createElement('div');
-        label.className = 'mt-4 md:mt-5 whitespace-nowrap z-20';
-        label.id = `cat-label-${cat.id}`;
-
-        if (isActive) {
-          label.innerHTML = `<span class="text-[9px] md:text-xs font-bold tracking-widest uppercase bg-white border px-3 py-1 md:px-4 md:py-1.5 rounded-full shadow-sm" style="color: ${cat.color}; border-color: ${cat.color}">${cat.category}</span>`;
-        } else {
-          label.innerHTML = `<span class="text-[8px] md:text-[10px] font-semibold tracking-widest uppercase bg-white border px-2 py-1 md:px-3 md:py-1 rounded-full shadow-sm" style="color: ${cat.color}; border-color: ${cat.color}40;">${cat.category}</span>`;
-        }
-
-        col.appendChild(node);
-        col.appendChild(label);
-        categoriesRow.appendChild(col);
-
-        if (isActive) {
-          cat.items.forEach((item) => {
-            const row = document.createElement('div');
-            row.className = 'flex items-center bg-white border border-slate-200 rounded-lg px-4 py-3 md:py-4 shadow-sm hover:border-blue-500 hover:shadow-md transition-all cursor-pointer w-64 md:w-80 relative z-20 hover:scale-[1.02]';
-            row.innerHTML = `
-                 <i data-feather="${item.icon}" class="w-4 h-4 md:w-5 md:h-5 text-slate-500 mr-3 md:mr-4 pointer-events-none"></i>
-                 <span class="text-[11px] md:text-sm font-semibold text-slate-600 uppercase tracking-wider pointer-events-none">${item.name}</span>
-             `;
-            row.onclick = () => { if (item.url) window.location.href = item.url; };
-            subItemsRow.appendChild(row);
-          });
-        }
+        container.appendChild(row);
       });
 
+      nodesContainer.appendChild(container);
+
+      // Draw a single straight line from the category label down behind the sub-items for visual "spine" connection
+      const totalHeight = (cat.items.length * (40 + 16)); // approx height of each row + gap
+      createVerticalConnection(x, startY + 50, topOffset + totalHeight - 40, '#e2e8f0', `${cat.id}-spine`);
+    }
+
+
+    function renderHub() {
+      // Clear current renders
+      svgLayer.innerHTML = '';
+      nodesContainer.innerHTML = '';
+
+      dimensions = { w: window.innerWidth, h: window.innerHeight };
+
+      const cx = dimensions.w / 2;
+      const logoY = dimensions.h * 0.25; // SGE Logo at 25% height from top
+      const logoBottomAnchorY = logoY + 95; // Adjusted distance corresponding to 170px wrapper size
+
+      const isMobile = dimensions.w < 768;
+      let requiredHeight = dimensions.h;
+
+      if (!isMobile) {
+        // --- DESKTOP LAYOUT (Horizontal Branching) ---
+        let xOffset = 300;
+        if (dimensions.w < 1024) xOffset = 180;
+
+        const xPositions = {
+          'log': cx - xOffset,      // Left
+          'admin': cx,              // Center
+          'seg': cx + xOffset       // Right
+        };
+
+        const categoryY = logoY + 230;
+
+        menuData.forEach((cat) => {
+          const catX = xPositions[cat.id];
+          const catY = categoryY;
+
+          // Connection from SGE Logo down to this category
+          const lineColor = (activeCategory === cat.id || activeCategory === null) ? cat.color : '#cbd5e1';
+          createOrthogonalConnection(cx, logoBottomAnchorY, catX, catY - 35, lineColor, cat.id);
+
+          // Render Main Category Node
+          createCategoryNode(catX, catY, cat, cat.id);
+
+          // Render Sub Items (Only if Active) IN A PERFECT COLUMN
+          if (activeCategory === cat.id) {
+            createSubItemsList(catX, catY, cat);
+          }
+        });
+      } else {
+        // --- MOBILE LAYOUT (Vertical Accordion Stack) ---
+        let currentY = logoBottomAnchorY + 80; // Starting Y for first block
+        let prevY = logoBottomAnchorY;
+
+        menuData.forEach((cat, index) => {
+          const catX = cx;
+          const catY = currentY;
+          const lineColor = (activeCategory === cat.id || activeCategory === null) ? cat.color : '#cbd5e1';
+
+          // Connect from previous element down to this node (vertical spine)
+          createVerticalConnection(cx, prevY, catY - 35, lineColor, cat.id);
+
+          // Render Main Node
+          createCategoryNode(catX, catY, cat, cat.id);
+
+          // Accommodate space for this node's sub-items if active
+          let addedHeight = 60; // Base space between elements
+
+          if (activeCategory === cat.id) {
+            createSubItemsList(catX, catY, cat);
+            const itemsHeight = cat.items.length * 56; // estimated height per sub-item row
+            addedHeight += itemsHeight;
+          }
+
+          // Advance the Y position trackers for the next block
+          prevY = catY + addedHeight;
+          currentY = prevY + 80;
+        });
+
+        requiredHeight = Math.max(dimensions.h, currentY + 100);
+      }
+
+      // Ensure the app container expands if the dynamic height exceeds viewport
+      const appContainer = document.getElementById('app');
+      appContainer.style.minHeight = requiredHeight + "px";
+      svgLayer.style.height = requiredHeight + "px";
+
+      // Re-bind icons
       feather.replace();
-
-      requestAnimationFrame(() => {
-        setTimeout(drawLines, 50);
-      });
     }
 
     function resetHub() {
@@ -330,11 +545,15 @@
       renderHub();
     }
 
-    window.onload = () => { renderHub(); };
-    window.addEventListener('resize', () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => { renderHub(); drawLines(); }, 150);
-    });
+    // Initialization
+    window.onload = () => {
+      renderHub();
+    };
+
+    window.onresize = () => {
+      renderHub();
+    };
+
   </script>
 </body>
 
