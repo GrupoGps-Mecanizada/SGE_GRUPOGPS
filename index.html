@@ -17,11 +17,11 @@
       background-color: #f8fafc;
       /* Light Slate 50 */
       color: #334155;
-      /* Slate 700 */
-      overflow-x: hidden;
       margin: 0;
       padding: 0;
       user-select: none;
+      /* Allow document scrolling but visually it's handled by drag */
+      overflow: auto;
     }
 
     .font-mono {
@@ -123,13 +123,19 @@
       stroke-linejoin: miter;
     }
 
-    /* App Container for dynamic rendering */
     #app {
       position: relative;
       width: 100vw;
       min-height: 100vh;
       z-index: 10;
       padding-bottom: 100px;
+      cursor: grab;
+      /* Show grab cursor */
+    }
+
+    #app:active {
+      cursor: grabbing;
+      /* Show grabbing cursor when dragging */
     }
 
     /* Pulse Animations */
@@ -275,8 +281,9 @@
     <div id="nodes-container"></div>
   </div>
 
-  <div class="absolute bottom-6 left-0 w-full text-center pointer-events-none z-50">
-    <p class="text-[10px] md:text-xs text-slate-400/80 font-mono tracking-widest uppercase">
+  <div class="fixed bottom-6 left-0 w-full text-center pointer-events-none z-50">
+    <p
+      class="text-[10px] md:text-xs text-slate-400/80 font-mono tracking-widest uppercase bg-white/50 backdrop-blur-sm inline-block px-4 py-1 rounded-full">
       Desenvolvido por Warlison Abreu - Grupo GPS
     </p>
   </div>
@@ -475,14 +482,19 @@
       svgLayer.innerHTML = '';
       nodesContainer.innerHTML = '';
 
-      dimensions = { w: window.innerWidth, h: window.innerHeight };
-
-      const cx = dimensions.w / 2;
+      // --- UNIFIED LAYOUT (Horizontal Branching for all screens) ---
+      // Distribute items across a fixed virtual width to act as a canvas
+      const virtualWidth = Math.max(dimensions.w, 1200); // Enforce a minimum canvas width of 1200px
+      const cx = virtualWidth / 2;
       const logoY = dimensions.h * 0.25; // SGE Logo at 25% height from top
       const logoBottomAnchorY = logoY + 95; // Bottom of SGE logo
 
       const clientNodeY = logoY + 160;
       const clientNodeBottomY = clientNodeY + 20;
+
+      // Ensure the app container expands if dynamic width exceeds viewport
+      const appContainer = document.getElementById('app');
+      let requiredHeight = dimensions.h;
 
       // Position the Client Node visually
       const clientNode = document.getElementById('client-node');
@@ -494,77 +506,46 @@
       // Draw connection from SGE to GRUPO GPS
       createVerticalConnection(cx, logoBottomAnchorY, clientNodeY - 20, '#64748b', 'sge-to-client');
 
-      const isMobile = dimensions.w < 768;
-      let requiredHeight = dimensions.h;
+      const totalWidthAvailable = virtualWidth * 0.75; // Use 75% of virtual screen
+      const startX = (virtualWidth - totalWidthAvailable) / 2;
+      const spacing = totalWidthAvailable / 3;
 
-      if (!isMobile) {
-        // --- DESKTOP LAYOUT (Horizontal Branching) ---
-        // 4 items means we need equal spacing across the width
-        const totalWidthAvailable = dimensions.w * 0.55; // Use 55% of screen to bring them closer
-        const startX = (dimensions.w - totalWidthAvailable) / 2;
-        const spacing = totalWidthAvailable / 3;
+      const xPositions = {
+        'log': startX,
+        'admin': startX + spacing,
+        'seg': startX + (spacing * 2),
+        'frota': startX + (spacing * 3)
+      };
 
-        const xPositions = {
-          'log': startX,
-          'admin': startX + spacing,
-          'seg': startX + (spacing * 2),
-          'frota': startX + (spacing * 3)
-        };
+      const categoryY = logoY + 250;
 
-        const categoryY = logoY + 250;
+      menuData.forEach((cat) => {
+        const catX = xPositions[cat.id];
+        const catY = categoryY;
 
-        menuData.forEach((cat) => {
-          const catX = xPositions[cat.id];
-          const catY = categoryY;
+        // Connection from Client Node (Grupo GPS) down to this category
+        const lineColor = (activeCategory === cat.id || activeCategory === null) ? cat.color : '#cbd5e1';
+        createOrthogonalConnection(cx, clientNodeBottomY, catX, catY - 35, lineColor, cat.id);
 
-          // Connection from Client Node (Grupo GPS) down to this category
-          const lineColor = (activeCategory === cat.id || activeCategory === null) ? cat.color : '#cbd5e1';
-          createOrthogonalConnection(cx, clientNodeBottomY, catX, catY - 35, lineColor, cat.id);
+        // Render Main Category Node
+        createCategoryNode(catX, catY, cat, cat.id);
 
-          // Render Main Category Node
-          createCategoryNode(catX, catY, cat, cat.id);
+        let itemsBottom = catY + 50;
 
-          // Render Sub Items (Only if Active) IN A PERFECT COLUMN
-          if (activeCategory === cat.id) {
-            createSubItemsList(catX, catY, cat);
-          }
-        });
-      } else {
-        // --- MOBILE LAYOUT (Vertical Accordion Stack) ---
-        let currentY = clientNodeBottomY + 70; // Starting Y for first block
-        let prevY = clientNodeBottomY;
+        // Render Sub Items (Only if Active) IN A PERFECT COLUMN
+        if (activeCategory === cat.id) {
+          createSubItemsList(catX, catY, cat);
+          itemsBottom = catY + 95 + (cat.items.length * 56);
+        }
 
-        menuData.forEach((cat, index) => {
-          const catX = cx;
-          const catY = currentY;
-          const lineColor = (activeCategory === cat.id || activeCategory === null) ? cat.color : '#cbd5e1';
+        if (itemsBottom + 100 > requiredHeight) {
+          requiredHeight = itemsBottom + 100;
+        }
+      });
 
-          // Connect from previous element down to this node (vertical spine)
-          createVerticalConnection(cx, prevY, catY - 35, lineColor, cat.id);
-
-          // Render Main Node
-          createCategoryNode(catX, catY, cat, cat.id);
-
-          // Accommodate space for this node's sub-items if active
-          let addedHeight = 60; // Base space between elements
-
-          if (activeCategory === cat.id) {
-            createSubItemsList(catX, catY, cat);
-            const itemsHeight = cat.items.length * 56; // estimated height per sub-item row
-            addedHeight += itemsHeight;
-          }
-
-          // Advance the Y position trackers for the next block
-          prevY = catY + addedHeight;
-          currentY = prevY + 80;
-        });
-
-        requiredHeight = Math.max(dimensions.h, currentY + 100);
-      }
-
-      // Ensure the app container expands if the dynamic height exceeds viewport
-      const appContainer = document.getElementById('app');
+      appContainer.style.minWidth = virtualWidth + "px";
       appContainer.style.minHeight = requiredHeight + "px";
+      svgLayer.style.width = virtualWidth + "px";
       svgLayer.style.height = requiredHeight + "px";
 
       // Re-bind icons
@@ -584,6 +565,56 @@
     window.onresize = () => {
       renderHub();
     };
+
+    // --- Drag to Scroll Implementation (Canvas feeling) ---
+    const appContainer = document.getElementById('app');
+    let isDragging = false;
+    let startX, startY, scrollLeft, scrollTop;
+
+    const startDrag = (pageX, pageY) => {
+      isDragging = true;
+      startX = pageX - document.documentElement.scrollLeft;
+      startY = pageY - document.documentElement.scrollTop;
+      scrollLeft = document.documentElement.scrollLeft;
+      scrollTop = document.documentElement.scrollTop;
+    };
+
+    const doDrag = (pageX, pageY) => {
+      if (!isDragging) return;
+      const x = pageX - startX;
+      const y = pageY - startY;
+      document.documentElement.scrollLeft = scrollLeft - x;
+      document.documentElement.scrollTop = scrollTop - y;
+
+      // Also apply to body for compatibility
+      document.body.scrollLeft = scrollLeft - x;
+      document.body.scrollTop = scrollTop - y;
+    };
+
+    const endDrag = () => {
+      isDragging = false;
+    };
+
+    // Mouse events
+    appContainer.addEventListener('mousedown', (e) => startDrag(e.pageX, e.pageY));
+    appContainer.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      e.preventDefault(); // Prevent default text selection during drag
+      doDrag(e.pageX, e.pageY);
+    });
+    appContainer.addEventListener('mouseup', endDrag);
+    appContainer.addEventListener('mouseleave', endDrag);
+
+    // Touch events
+    appContainer.addEventListener('touchstart', (e) => startDrag(e.touches[0].pageX, e.touches[0].pageY));
+    appContainer.addEventListener('touchmove', (e) => {
+      if (!isDragging) return;
+      // Do not prevent default here entirely if you want native pinch/zoom, 
+      // but preventing it avoids pull-to-refresh on mobile browsers
+      // e.preventDefault(); 
+      doDrag(e.touches[0].pageX, e.touches[0].pageY);
+    });
+    appContainer.addEventListener('touchend', endDrag);
 
   </script>
 </body>
