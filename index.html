@@ -260,10 +260,16 @@
 
         <div class="flex flex-col items-center justify-center h-full z-20 relative select-none"
           style="font-family: 'Inter', sans-serif;">
-          <div class="text-6xl font-black text-slate-800 tracking-tighter" style="line-height: 1;">SGE</div>
-          <div class="text-[10px] font-bold text-slate-500 tracking-[0.2em] mt-2 uppercase">Grupo GPS</div>
+          <img src="./public/logo-custom.svg" alt="SGE Logo" style="width: 100px; height: auto;" />
         </div>
       </div>
+    </div>
+
+    <!-- Grupo GPS Node -->
+    <div id="client-node"
+      class="absolute flex items-center justify-center bg-slate-800 text-white text-[11px] font-bold tracking-[0.2em] rounded-lg px-6 py-2.5 z-30 shadow-lg border-2 border-slate-700"
+      style="transform: translate(-50%, -50%); transition: all 0.3s; cursor: default;">
+      GRUPO GPS
     </div>
 
     <div id="nodes-container"></div>
@@ -285,10 +291,6 @@
         color: "#d97706", // Amber 600
         items: [
           { name: "Almoxarifado", icon: "box", url: "almoxarifado.html" },
-          { name: "Equipamentos", icon: "tool", url: "equipamentos.html" },
-          { name: "Produtividade", icon: "bar-chart-2", url: "produtividade.html" },
-          { name: "Controle de Frota", icon: "navigation", url: "frota.html" },
-          { name: "Manutenções", icon: "settings", url: "manutencao.html" },
         ]
       },
       {
@@ -312,6 +314,17 @@
           { name: "Etilômetro Digital", icon: "activity", url: "etilometro.html" },
           { name: "Histórico Advert.", icon: "alert-triangle", url: "advertencia.html" },
           { name: "Treinamentos", icon: "award", url: "treinamentos.html" },
+        ]
+      },
+      {
+        id: 'frota',
+        category: "FROTA",
+        icon: "truck",
+        color: "#9333ea", // Purple 600
+        items: [
+          { name: "Controle de Frota", icon: "navigation", url: "frota.html" },
+          { name: "Manutenções", icon: "settings", url: "manutencao.html" },
+          { name: "Apontamentos", icon: "edit-3", url: "apontamentos.html" },
         ]
       }
     ];
@@ -453,7 +466,7 @@
 
       // Draw a single straight line from the category label down behind the sub-items for visual "spine" connection
       const totalHeight = (cat.items.length * (40 + 16)); // approx height of each row + gap
-      createVerticalConnection(x, startY + 50, topOffset + totalHeight - 40, '#e2e8f0', `${cat.id}-spine`);
+      createVerticalConnection(x, startY + 50, topOffset + totalHeight - 40, cat.color, `${cat.id}-spine`);
     }
 
 
@@ -466,31 +479,47 @@
 
       const cx = dimensions.w / 2;
       const logoY = dimensions.h * 0.25; // SGE Logo at 25% height from top
-      const logoBottomAnchorY = logoY + 95; // Adjusted distance corresponding to 170px wrapper size
+      const logoBottomAnchorY = logoY + 95; // Bottom of SGE logo
+
+      const clientNodeY = logoY + 160;
+      const clientNodeBottomY = clientNodeY + 20;
+
+      // Position the Client Node visually
+      const clientNode = document.getElementById('client-node');
+      if (clientNode) {
+        clientNode.style.left = cx + "px";
+        clientNode.style.top = clientNodeY + "px";
+      }
+
+      // Draw connection from SGE to GRUPO GPS
+      createVerticalConnection(cx, logoBottomAnchorY, clientNodeY - 20, '#64748b', 'sge-to-client');
 
       const isMobile = dimensions.w < 768;
       let requiredHeight = dimensions.h;
 
       if (!isMobile) {
         // --- DESKTOP LAYOUT (Horizontal Branching) ---
-        let xOffset = 300;
-        if (dimensions.w < 1024) xOffset = 180;
+        // 4 items means we need equal spacing across the width
+        const totalWidthAvailable = dimensions.w * 0.55; // Use 55% of screen to bring them closer
+        const startX = (dimensions.w - totalWidthAvailable) / 2;
+        const spacing = totalWidthAvailable / 3;
 
         const xPositions = {
-          'log': cx - xOffset,      // Left
-          'admin': cx,              // Center
-          'seg': cx + xOffset       // Right
+          'log': startX,
+          'admin': startX + spacing,
+          'seg': startX + (spacing * 2),
+          'frota': startX + (spacing * 3)
         };
 
-        const categoryY = logoY + 230;
+        const categoryY = logoY + 250;
 
         menuData.forEach((cat) => {
           const catX = xPositions[cat.id];
           const catY = categoryY;
 
-          // Connection from SGE Logo down to this category
+          // Connection from Client Node (Grupo GPS) down to this category
           const lineColor = (activeCategory === cat.id || activeCategory === null) ? cat.color : '#cbd5e1';
-          createOrthogonalConnection(cx, logoBottomAnchorY, catX, catY - 35, lineColor, cat.id);
+          createOrthogonalConnection(cx, clientNodeBottomY, catX, catY - 35, lineColor, cat.id);
 
           // Render Main Category Node
           createCategoryNode(catX, catY, cat, cat.id);
@@ -502,8 +531,8 @@
         });
       } else {
         // --- MOBILE LAYOUT (Vertical Accordion Stack) ---
-        let currentY = logoBottomAnchorY + 80; // Starting Y for first block
-        let prevY = logoBottomAnchorY;
+        let currentY = clientNodeBottomY + 70; // Starting Y for first block
+        let prevY = clientNodeBottomY;
 
         menuData.forEach((cat, index) => {
           const catX = cx;
