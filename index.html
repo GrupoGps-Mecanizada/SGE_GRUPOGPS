@@ -129,13 +129,16 @@
       min-height: 100vh;
       z-index: 10;
       padding-bottom: 100px;
-      cursor: grab;
-      /* Show grab cursor */
     }
 
-    #app:active {
-      cursor: grabbing;
-      /* Show grabbing cursor when dragging */
+    @media (max-width: 768px) {
+      #app {
+        cursor: grab;
+      }
+
+      #app:active {
+        cursor: grabbing;
+      }
     }
 
     /* Pulse Animations */
@@ -480,11 +483,13 @@
     function renderHub() {
       // Clear current renders
       svgLayer.innerHTML = '';
-      nodesContainer.innerHTML = '';
+      dimensions = { w: window.innerWidth, h: window.innerHeight };
+      const isMobile = dimensions.w < 768;
 
       // --- UNIFIED LAYOUT (Horizontal Branching for all screens) ---
       // Distribute items across a fixed virtual width to act as a canvas
-      const virtualWidth = Math.max(dimensions.w, 1200); // Enforce a minimum canvas width of 1200px
+      // On mobile keep it tighter (e.g. 800px) so nodes are closer, Desktop keep natural spread
+      const virtualWidth = isMobile ? Math.max(dimensions.w, 900) : dimensions.w;
       const cx = virtualWidth / 2;
       const logoY = dimensions.h * 0.25; // SGE Logo at 25% height from top
       const logoBottomAnchorY = logoY + 95; // Bottom of SGE logo
@@ -506,7 +511,9 @@
       // Draw connection from SGE to GRUPO GPS
       createVerticalConnection(cx, logoBottomAnchorY, clientNodeY - 20, '#64748b', 'sge-to-client');
 
-      const totalWidthAvailable = virtualWidth * 0.75; // Use 75% of virtual screen
+      // Use wider spread on desktop (55%) vs tighter on mobile (85% of virtualWidth)
+      const spreadPercentage = isMobile ? 0.90 : 0.55;
+      const totalWidthAvailable = virtualWidth * spreadPercentage;
       const startX = (virtualWidth - totalWidthAvailable) / 2;
       const spacing = totalWidthAvailable / 3;
 
@@ -566,12 +573,41 @@
       renderHub();
     };
 
-    // --- Drag to Scroll Implementation (Canvas feeling) ---
+    // Center screen on initial load specifically for mobile to view logo
+    const scrollToCenter = () => {
+      const currentDimensions = { w: window.innerWidth, h: window.innerHeight };
+      const isMobile = currentDimensions.w < 768;
+      if (isMobile) {
+        const virtualWidth = Math.max(currentDimensions.w, 900);
+        // Calculate center scroll offset to position logo in middle of screen
+        const scrollPositionX = (virtualWidth - window.innerWidth) / 2;
+
+        // Request animation frame ensures DOM is fully painted
+        setTimeout(() => {
+          window.scrollTo({
+            left: scrollPositionX,
+            top: 0,
+            behavior: 'smooth'
+          });
+        }, 100);
+      }
+    };
+
+    // Auto-center after first render
+    setTimeout(scrollToCenter, 300);
+
+    // --- Drag to Scroll Implementation (Canvas feeling) exclusively for Touch ---
     const appContainer = document.getElementById('app');
     let isDragging = false;
     let startX, startY, scrollLeft, scrollTop;
 
+    // Only allow drag actions on mobile
+    const isTouchDevice = () => {
+      return (('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0));
+    };
+
     const startDrag = (pageX, pageY) => {
+      if (!isTouchDevice()) return;
       isDragging = true;
       startX = pageX - document.documentElement.scrollLeft;
       startY = pageY - document.documentElement.scrollTop;
@@ -580,40 +616,37 @@
     };
 
     const doDrag = (pageX, pageY) => {
-      if (!isDragging) return;
+      if (!isDragging || !isTouchDevice()) return;
       const x = pageX - startX;
       const y = pageY - startY;
-      document.documentElement.scrollLeft = scrollLeft - x;
-      document.documentElement.scrollTop = scrollTop - y;
 
-      // Also apply to body for compatibility
-      document.body.scrollLeft = scrollLeft - x;
-      document.body.scrollTop = scrollTop - y;
+      // Ensure we don't scroll past the logical boundaries
+      const maxScrollLeft = document.documentElement.scrollWidth - window.innerWidth;
+      const maxScrollTop = document.documentElement.scrollHeight - window.innerHeight;
+
+      // Calculate bounded scrolls
+      let targetLeft = scrollLeft - x;
+      let targetTop = scrollTop - y;
+
+      if (targetLeft < 0) targetLeft = 0;
+      if (targetLeft > maxScrollLeft) targetLeft = maxScrollLeft;
+      if (targetTop < 0) targetTop = 0;
+      if (targetTop > maxScrollTop) targetTop = maxScrollTop;
+
+      window.scrollTo(targetLeft, targetTop);
     };
 
     const endDrag = () => {
       isDragging = false;
     };
 
-    // Mouse events
-    appContainer.addEventListener('mousedown', (e) => startDrag(e.pageX, e.pageY));
-    appContainer.addEventListener('mousemove', (e) => {
-      if (!isDragging) return;
-      e.preventDefault(); // Prevent default text selection during drag
-      doDrag(e.pageX, e.pageY);
-    });
-    appContainer.addEventListener('mouseup', endDrag);
-    appContainer.addEventListener('mouseleave', endDrag);
-
-    // Touch events
-    appContainer.addEventListener('touchstart', (e) => startDrag(e.touches[0].pageX, e.touches[0].pageY));
+    // Touch events for drag to scroll (ONLY on Mobile)
+    appContainer.addEventListener('touchstart', (e) => startDrag(e.touches[0].pageX, e.touches[0].pageY), { passive: true });
     appContainer.addEventListener('touchmove', (e) => {
-      if (!isDragging) return;
-      // Do not prevent default here entirely if you want native pinch/zoom, 
-      // but preventing it avoids pull-to-refresh on mobile browsers
-      // e.preventDefault(); 
+      if (!isDragging || !isTouchDevice()) return;
+      // Let vertical native scroll work occasionally, but mostly capture drag
       doDrag(e.touches[0].pageX, e.touches[0].pageY);
-    });
+    }, { passive: true });
     appContainer.addEventListener('touchend', endDrag);
 
   </script>
