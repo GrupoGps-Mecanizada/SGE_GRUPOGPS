@@ -308,7 +308,7 @@
         icon: "package",
         color: "#d97706", // Amber 600
         items: [
-          { name: "Almoxarifado", icon: "box", url: "almoxarifado.html" },
+          { name: "Almoxarifado", icon: "box", url: "https://grupogps-mecanizada.github.io/Almoxarifado/" },
         ]
       },
       {
@@ -317,10 +317,10 @@
         icon: "users",
         color: "#2563eb", // Blue 600
         items: [
-          { name: "Controle Efetivo", icon: "users", url: "efetivo.html" },
-          { name: "Controle Presença", icon: "clock", url: "presenca.html" },
-          { name: "Relatório Turno", icon: "file-text", url: "../Relat-rio-Turno---Oficial/index.html" },
-          { name: "Horas Extras", icon: "calendar", url: "horas-extras.html" },
+          { name: "Controle Efetivo", icon: "users", url: "https://grupogps-mecanizada.github.io/Gest-o-Efetivo/" },
+          { name: "Controle Presença", icon: "clock", url: "https://grupogps-mecanizada.github.io/Controle-De-Presen-a/" },
+          { name: "Relatório Turno", icon: "file-text", url: "https://grupogps-mecanizada.github.io/Relat-rio-Turno---Oficial/" },
+          { name: "Horas Extras", icon: "calendar", url: "https://grupogps-mecanizada.github.io/CLASSIFICAR-HORAS/" },
         ]
       },
       {
@@ -329,9 +329,9 @@
         icon: "shield",
         color: "#059669", // Emerald 600
         items: [
-          { name: "Etilômetro Digital", icon: "activity", url: "etilometro.html" },
-          { name: "Histórico Advert.", icon: "alert-triangle", url: "advertencia.html" },
-          { name: "Treinamentos", icon: "award", url: "treinamentos.html" },
+          { name: "Etilômetro Digital", icon: "activity", url: "https://grupogps-mecanizada.github.io/Sistema-Etilometro/" },
+          { name: "Histórico Advert.", icon: "alert-triangle", url: "#" },
+          { name: "Treinamentos", icon: "award", url: "#" },
         ]
       },
       {
@@ -340,9 +340,9 @@
         icon: "truck",
         color: "#9333ea", // Purple 600
         items: [
-          { name: "Controle de Frota", icon: "navigation", url: "frota.html" },
-          { name: "Manutenções", icon: "settings", url: "manutencao.html" },
-          { name: "Apontamentos", icon: "edit-3", url: "apontamentos.html" },
+          { name: "Controle de Frota", icon: "navigation", url: "https://grupogps-mecanizada.github.io/Gest-o-De-Frotas---2/" },
+          { name: "Manutenções", icon: "settings", url: "https://grupogps-mecanizada.github.io/Manuten-o-/" },
+          { name: "Apontamentos", icon: "edit-3", url: "https://grupogps-mecanizada.github.io/Apontamento-Dos-Tablets/" },
         ]
       }
     ];
@@ -474,7 +474,11 @@
 
         row.onclick = (e) => {
           e.stopPropagation();
-          if (item.url) window.location.href = item.url;
+          if (item.url && item.url !== "#") {
+            window.location.href = item.url;
+          } else {
+            alert("Em Desenvolvimento");
+          }
         };
 
         container.appendChild(row);
