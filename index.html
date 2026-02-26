@@ -22,13 +22,11 @@
 
     body {
       font-family: 'Inter', sans-serif;
-      background-color: #f8fafc;
-      /* Light Slate 50 */
+      background: radial-gradient(ellipse at 50% 30%, #f1f5f9 0%, #e8edf5 60%, #dde4ef 100%);
       color: #334155;
       margin: 0;
       padding: 0;
       user-select: none;
-      /* Allow document scrolling but visually it's handled by drag */
       overflow: auto;
     }
 
@@ -36,18 +34,29 @@
       font-family: 'JetBrains Mono', monospace;
     }
 
-    /* Subtle Light Background Grid */
-    .bg-grid {
-      position: absolute;
+    /* ── Particle Canvas — fixed, below everything ── */
+    #bg-canvas {
+      position: fixed;
       inset: 0;
-      opacity: 0.5;
-      background-image: linear-gradient(#e2e8f0 1px, transparent 1px), linear-gradient(90deg, #e2e8f0 1px, transparent 1px);
-      background-size: 40px 40px;
-      z-index: 0;
+      width: 100%;
+      height: 100%;
       pointer-events: none;
+      z-index: 0;
     }
 
-    /* Node Animations & Layout */
+
+
+    /* Connections */
+    svg.connection-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 4;
+      overflow: visible;
+    }
+
     .node-container {
       position: absolute;
       transform: translate(-50%, -50%);
@@ -77,7 +86,6 @@
     .center-logo {
       position: absolute;
       top: 25%;
-      /* Fixed top distance */
       left: 50%;
       transform: translate(-50%, -50%);
       z-index: 40;
@@ -111,24 +119,231 @@
       z-index: 20;
     }
 
-    /* Connections */
-    svg.connection-layer {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 4;
-      overflow: visible;
+    /* Vignette edge darkening */
+    #vignette {
+      position: fixed; inset: 0;
+      background: radial-gradient(ellipse at 50% 40%, transparent 45%, rgba(180,192,210,0.18) 100%);
+      pointer-events: none; z-index: 1;
     }
 
-    /* Straight, sharp lines instead of glowing lines */
+    /* Smooth curves on SVG lines */
     .line-bg {
-      opacity: 0.8;
+      opacity: 0.75;
       stroke-width: 1.5;
-      transition: stroke 0.5s ease;
-      stroke-linecap: square;
-      stroke-linejoin: miter;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: stroke 0.4s ease, opacity 0.4s ease;
+    }
+    .line-bg.dimmed { opacity: 0.18; }
+
+    /* Category diamond node */
+    .cat-diamond {
+      position: absolute;
+      transform: translate(-50%, -50%) rotate(45deg);
+      background: #ffffff;
+      border: 2px solid;
+      transition: all 0.35s cubic-bezier(0.4,0,0.2,1);
+      cursor: pointer;
+      z-index: 20;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .cat-diamond:hover {
+      transform: translate(-50%, -50%) rotate(45deg) scale(1.1);
+      box-shadow: 0 8px 24px -4px rgba(0,0,0,0.12);
+    }
+    .cat-diamond-inner {
+      transform: rotate(-45deg);
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* Status pulse dot */
+    .status-pulse {
+      width: 7px; height: 7px; border-radius: 50%;
+      display: inline-block;
+      animation: status-blink 2.4s ease-in-out infinite;
+    }
+    @keyframes status-blink {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: 0.4; transform: scale(0.75); }
+    }
+
+    /* Center node card hover */
+    #center-node:hover .center-card {
+      box-shadow: 0 8px 32px rgba(10,47,168,0.12), 0 2px 8px rgba(0,0,0,0.06);
+      border-color: rgba(10,47,168,0.2);
+    }
+
+    /* Sector expand animation */
+    @keyframes nodeReveal {
+      from { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+      to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+    @keyframes nodeRevealDiamond {
+      from { opacity: 0; transform: translate(-50%, -50%) rotate(45deg) scale(0.5); }
+      to   { opacity: 1; transform: translate(-50%, -50%) rotate(45deg) scale(1); }
+    }
+    @keyframes labelReveal {
+      from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+    @keyframes lineReveal {
+      from { stroke-dashoffset: var(--path-len); }
+      to   { stroke-dashoffset: 0; }
+    }
+    @keyframes subItemReveal {
+      from { opacity: 0; transform: translateX(8px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .animate-node-reveal {
+      animation: nodeReveal 0.45s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    .animate-diamond-reveal {
+      animation: nodeRevealDiamond 0.45s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    .animate-label-reveal {
+      animation: labelReveal 0.4s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    .animate-subitem-reveal {
+      animation: subItemReveal 0.35s cubic-bezier(0.16,1,0.3,1) both;
+    }
+
+    /* ── MOBILE LAYOUT ──────────────────────────────────── */
+    #mobile-hub {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px 120px;
+      gap: 0;
+      position: relative;
+      z-index: 10;
+      min-height: 100vh;
+    }
+
+    /* Center card mobile */
+    .m-center-card {
+      background: #fff;
+      border: 1px solid rgba(10,47,168,0.12);
+      border-radius: 16px;
+      padding: 18px 36px 16px;
+      box-shadow: 0 4px 18px rgba(10,47,168,0.07);
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      cursor: pointer;
+      transition: box-shadow 0.3s;
+    }
+    .m-center-card:hover {
+      box-shadow: 0 8px 32px rgba(10,47,168,0.12);
+    }
+
+    /* Vertical connector line */
+    .m-connector {
+      width: 2px;
+      background: linear-gradient(to bottom, #94a3b8, #cbd5e1);
+      margin: 0 auto;
+      border-radius: 2px;
+    }
+
+    /* Sector pill mobile */
+    .m-sector-pill {
+      border: 2px solid;
+      border-radius: 10px;
+      padding: 13px 28px;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      text-align: center;
+      min-width: 200px;
+    }
+
+    /* Sector row (line + pill) */
+    .m-sector-row {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+
+    /* Categories grid 2x2 */
+    .m-categories-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      width: 100%;
+      max-width: 360px;
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 0.5s cubic-bezier(0.16,1,0.3,1), opacity 0.4s ease;
+      opacity: 0;
+    }
+    .m-categories-grid.open {
+      max-height: 600px;
+      opacity: 1;
+    }
+
+    /* Category card mobile */
+    .m-cat-card {
+      background: #fff;
+      border: 2px solid;
+      border-radius: 12px;
+      padding: 14px 10px;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 6px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      animation: fadeScaleIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    .m-cat-card:active { transform: scale(0.97); }
+
+    .m-cat-label {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      text-align: center;
+    }
+
+    /* Sub-items accordion */
+    .m-subitems {
+      overflow: hidden;
+      max-height: 0;
+      width: 100%;
+      max-width: 360px;
+      transition: max-height 0.4s cubic-bezier(0.16,1,0.3,1), opacity 0.3s ease;
+      opacity: 0;
+    }
+    .m-subitems.open {
+      max-height: 400px;
+      opacity: 1;
+    }
+    .m-subitem-row {
+      display: flex; align-items: center; gap: 10px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 11px 14px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      animation: subItemReveal 0.3s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    .m-subitem-row:last-child { margin-bottom: 0; }
+    .m-subitem-row:active { transform: translateX(4px); }
+
+    @keyframes fadeScaleIn {
+      from { opacity: 0; transform: scale(0.85); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    /* Show/hide based on screen */
+    @media (max-width: 767px) {
+      #app         { display: none !important; }
+      #mobile-hub  { display: flex !important; }
+    }
+    @media (min-width: 768px) {
+      #app         { display: block; }
+      #mobile-hub  { display: none !important; }
     }
 
     #app {
@@ -139,68 +354,16 @@
       padding-bottom: 100px;
     }
 
-    @media (max-width: 768px) {
-      #app {
-        cursor: grab;
-      }
-
-      #app:active {
-        cursor: grabbing;
-      }
-    }
-
-    /* Pulse Animations */
-    .pulse-dot {
-      position: absolute;
-      border-radius: 50%;
-      animation: ortho-travel-2 3s linear infinite;
-      filter: drop-shadow(0 0 6px currentcolor);
-      z-index: 5;
-    }
-
-    /* Animated traveling dot over path */
-    .animated-dot {
-      offset-path: var(--path-route);
-      animation: path-travel 3s linear infinite;
-      position: absolute;
-      border-radius: 50%;
-      width: 8px;
-      height: 8px;
-      z-index: 5;
-      filter: drop-shadow(0 0 5px currentcolor);
-      transform-origin: center;
-    }
-
-    @keyframes path-travel {
-      0% {
-        offset-distance: 0%;
-        opacity: 0;
-      }
-
-      5% {
-        opacity: 1;
-      }
-
-      95% {
-        opacity: 1;
-      }
-
-      100% {
-        offset-distance: 100%;
-        opacity: 0;
-      }
-    }
-
-    /* Category Sub-items list layout to ensure "esquadro" */
+    /* Category Sub-items list */
     .sub-items-container {
       position: absolute;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 16px;
-      transform: translateX(-50%);
+      width: 240px;
       z-index: 15;
-      transition: opacity 0.3s ease, transform 0.3s ease;
+      transition: opacity 0.3s ease;
     }
 
     .sub-item-row {
@@ -214,12 +377,10 @@
       transition: all 0.2s ease;
       cursor: pointer;
       width: 220px;
-      /* Fixed width for perfect alignment */
     }
 
     .sub-item-row:hover {
       border-color: #3b82f6;
-      /* Blue border on hover */
       box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
       transform: translateY(-2px);
     }
@@ -230,9 +391,7 @@
       transition: color 0.2s ease;
     }
 
-    .sub-item-row:hover .sub-item-icon {
-      color: #3b82f6;
-    }
+    .sub-item-row:hover .sub-item-icon { color: #3b82f6; }
 
     .sub-item-text {
       font-size: 13px;
@@ -243,15 +402,10 @@
       transition: color 0.2s ease;
     }
 
-    .sub-item-row:hover .sub-item-text {
-      color: #0f172a;
-    }
+    .sub-item-row:hover .sub-item-text { color: #0f172a; }
 
-    /* Spin Animation mapped specifically for light view */
     @keyframes spin {
-      100% {
-        transform: scale(1.3) rotate(360deg);
-      }
+      100% { transform: scale(1.3) rotate(360deg); }
     }
 
     /* Toast Notification */
@@ -281,50 +435,74 @@
       transform: translateX(-50%) translateY(0);
     }
 
-    #toast-container i {
-      color: #3b82f6;
-      /* Accent blue */
-    }
+    #toast-container i { color: #3b82f6; }
   </style>
 </head>
 
 <body>
 
-  <div class="bg-grid"></div>
+  <!-- Particle Canvas (z-index 0, behind everything) -->
+  <canvas id="bg-canvas"></canvas>
+  <!-- Vignette -->
+  <div id="vignette"></div>
 
-  <!-- Toast Notification Container -->
+<!-- Toast Notification Container -->
   <div id="toast-container">
     <i data-feather="info" class="w-5 h-5"></i>
     <span id="toast-message" class="text-sm font-medium tracking-wide"></span>
   </div>
-
-
 
   <!-- Main Application Area -->
   <div id="app">
     <!-- SVG Layer for connections -->
     <svg id="svg-layer" class="connection-layer"></svg>
 
-    <!-- SGE Center -->
-    <div class="center-logo">
-      <div class="center-image-wrapper border-black" style="width: 170px; height: 170px;" onclick="resetHub()">
-        <!-- Soft rings around logo -->
-        <div class="absolute inset-0 rounded-full border border-slate-100" style="transform: scale(1.10);"></div>
-        <div class="absolute inset-0 rounded-full border border-black border-dashed"
-          style="transform: scale(1.20); animation: spin 60s linear infinite;"></div>
-
-        <div class="flex flex-col items-center justify-center h-full z-20 relative select-none"
-          style="font-family: 'Inter', sans-serif;">
-          <img src="./public/logo-custom.svg" alt="SGE Logo" style="width: 100px; height: auto;" />
-        </div>
+    <!-- Grupo GPS Center Node -->
+    <div id="center-node" onclick="resetHub()"
+      style="
+        position: absolute;
+        transform: translate(-50%, -50%);
+        z-index: 40;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      "
+    >
+      <div class="center-card" style="
+        background: #ffffff;
+        border: 1px solid rgba(10,47,168,0.12);
+        border-radius: 16px;
+        padding: 20px 36px 18px;
+        box-shadow: 0 4px 18px rgba(10,47,168,0.07), 0 1px 4px rgba(0,0,0,0.04);
+        transition: box-shadow 0.3s ease, border-color 0.3s ease;
+        display: flex; flex-direction: column; align-items: center; gap: 3px;
+      ">
+        <span style="
+          font-family: 'Inter', sans-serif;
+          font-size: 14px;
+          font-weight: 500;
+          letter-spacing: 0.22em;
+          text-transform: uppercase;
+          color: #94a3b8;
+        ">Grupo</span>
+        <span style="
+          font-family: 'Inter', sans-serif;
+          font-size: 52px;
+          font-weight: 800;
+          letter-spacing: -0.03em;
+          color: #0a2fa8;
+          line-height: 1;
+        ">GPS</span>
+        <div style="
+          width: 32px; height: 2px;
+          background: #0a2fa8;
+          border-radius: 2px;
+          margin-top: 4px;
+          opacity: 0.25;
+        "></div>
       </div>
-    </div>
-
-    <!-- Grupo GPS Node -->
-    <div id="client-node"
-      class="absolute flex items-center justify-center bg-slate-800 text-white text-[11px] font-bold tracking-[0.2em] rounded-lg px-6 py-2.5 z-30 shadow-lg border-2 border-slate-700"
-      style="transform: translate(-50%, -50%); transition: all 0.3s; cursor: default;">
-      GRUPO GPS
     </div>
 
     <div id="nodes-container"></div>
@@ -337,6 +515,9 @@
     </p>
   </div>
 
+  <!-- ── MOBILE HUB ──────────────────────────────────────────────── -->
+  <div id="mobile-hub"></div>
+
   <script>
     // --- Data Definitions ---
     const menuData = [
@@ -344,7 +525,7 @@
         id: 'log',
         category: "LOGÍSTICA",
         icon: "package",
-        color: "#d97706", // Amber 600
+        color: "#d97706",
         items: [
           { name: "Almoxarifado", icon: "box", url: "https://grupogps-mecanizada.github.io/Almoxarifado/" },
         ]
@@ -353,7 +534,7 @@
         id: 'admin',
         category: "ADMINISTRATIVO",
         icon: "users",
-        color: "#2563eb", // Blue 600
+        color: "#2563eb",
         items: [
           { name: "Controle Efetivo", icon: "users", url: "https://grupogps-mecanizada.github.io/Gest-o-Efetivo/" },
           { name: "Controle Presença", icon: "clock", url: "https://grupogps-mecanizada.github.io/Controle-De-Presen-a/" },
@@ -365,7 +546,7 @@
         id: 'seg',
         category: "SEGURANÇA",
         icon: "shield",
-        color: "#059669", // Emerald 600
+        color: "#059669",
         items: [
           { name: "Etilômetro Digital", icon: "activity", url: "https://grupogps-mecanizada.github.io/Sistema-Etilometro/" },
           { name: "Histórico Advert.", icon: "alert-triangle", url: "#" },
@@ -376,7 +557,7 @@
         id: 'frota',
         category: "FROTA",
         icon: "truck",
-        color: "#9333ea", // Purple 600
+        color: "#9333ea",
         items: [
           { name: "Controle de Frota", icon: "navigation", url: "https://grupogps-mecanizada.github.io/Gest-o-De-Frotas---2/" },
           { name: "Manutenções", icon: "settings", url: "https://grupogps-mecanizada.github.io/Manuten-o-/" },
@@ -385,334 +566,737 @@
       }
     ];
 
+    // Sectors — top level branches from Grupo GPS
+    const sectors = [
+      { id: 'mecanizada', label: 'MECANIZADA', icon: 'settings', color: '#0a2fa8' },
+      { id: 'urbana',     label: 'URBANA',     icon: 'map-pin',  color: '#0369a1' },
+      { id: 'tecnica',    label: 'TÉCNICA',    icon: 'tool',     color: '#0369a1' },
+    ];
+
     // State
-    let activeCategory = null;
+    let activeSector     = null;
+    let activeCategory   = null;
+    let isAnimating      = false;
+    let animateDiamonds  = false; // only true when mecanizada is freshly opened
     let dimensions = { w: window.innerWidth, h: window.innerHeight };
 
-    // Elements
-    const svgLayer = document.getElementById('svg-layer');
+    const svgLayer      = document.getElementById('svg-layer');
     const nodesContainer = document.getElementById('nodes-container');
 
-    // Draw an orthogonal/straight line (cornered) from parent to child
+    // ── Connection helpers (unchanged) ──────────────────────────────
+
     function createOrthogonalConnection(x1, y1, x2, y2, color, id) {
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      const pathId = `path-${id}`;
+      const dy = y2 - y1;
+      const d = `M ${x1} ${y1} C ${x1} ${y1 + dy * 0.5}, ${x2} ${y2 - dy * 0.5}, ${x2} ${y2}`;
 
-      // Draw a straight line down, then horizontal, then down (ortho-routing)
-      // Midpoint Y for the horizontal turn
-      const midY = y1 + (y2 - y1) / 2;
+      const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      pathEl.setAttribute('id', pathId);
+      pathEl.setAttribute('d', d);
+      pathEl.setAttribute('stroke', color);
+      pathEl.setAttribute('fill', 'none');
+      pathEl.setAttribute('class', `line-bg conn-${id}`);
+      svgLayer.appendChild(pathEl);
 
-      // M = move to, L = line to
-      const d = `M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}`;
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('r', '4');
+      circle.setAttribute('fill', color);
+      circle.setAttribute('class', 'travel-dot');
 
-      path.setAttribute('d', d);
-      path.setAttribute('stroke', color);
-      path.setAttribute('fill', 'none');
-      path.setAttribute('class', `line-bg conn-${id}`);
+      const anim = document.createElementNS('http://www.w3.org/2000/svg', 'animateMotion');
+      anim.setAttribute('dur', '3s');
+      anim.setAttribute('repeatCount', 'indefinite');
+      anim.setAttribute('keyTimes', '0;0.05;0.95;1');
+      anim.setAttribute('keyPoints', '0;0;1;1');
+      anim.setAttribute('calcMode', 'linear');
+      const mpath = document.createElementNS('http://www.w3.org/2000/svg', 'mpath');
+      mpath.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', `#${pathId}`);
+      anim.appendChild(mpath);
 
-      svgLayer.appendChild(path);
+      const fadeAnim = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+      fadeAnim.setAttribute('attributeName', 'opacity');
+      fadeAnim.setAttribute('dur', '3s');
+      fadeAnim.setAttribute('repeatCount', 'indefinite');
+      fadeAnim.setAttribute('keyTimes', '0;0.05;0.95;1');
+      fadeAnim.setAttribute('values', '0;1;1;0');
+      fadeAnim.setAttribute('calcMode', 'linear');
 
-      // Add the animated traveling dot on this path!
-      // We use standard div that maps to offset-path
-      const dot = document.createElement('div');
-      dot.className = `animated-dot conn-${id}`;
-      dot.style.backgroundColor = color;
-      dot.style.setProperty('--path-route', `path('${d}')`);
-      nodesContainer.appendChild(dot);
+      circle.appendChild(anim);
+      circle.appendChild(fadeAnim);
+      svgLayer.appendChild(circle);
     }
 
-    // Draw straight vertical line (for sub-items dropdown)
     function createVerticalConnection(x, y1, y2, color, id) {
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      const pathId = `path-${id}`;
       const d = `M ${x} ${y1} L ${x} ${y2}`;
-      line.setAttribute('d', d);
-      line.setAttribute('stroke', color);
-      line.setAttribute('fill', 'none');
-      line.setAttribute('class', `line-bg conn-${id}`);
 
-      svgLayer.appendChild(line);
+      const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      pathEl.setAttribute('id', pathId);
+      pathEl.setAttribute('d', d);
+      pathEl.setAttribute('stroke', color);
+      pathEl.setAttribute('fill', 'none');
+      pathEl.setAttribute('class', `line-bg conn-${id}`);
+      svgLayer.appendChild(pathEl);
 
-      // Add mini pulse dot for vertical drops
-      const dot = document.createElement('div');
-      dot.className = `animated-dot conn-${id}`;
-      dot.style.backgroundColor = color;
-      dot.style.width = '5px';
-      dot.style.height = '5px';
-      dot.style.animationDuration = '1.5s'; // Faster on short drops
-      dot.style.setProperty('--path-route', `path('${d}')`);
-      nodesContainer.appendChild(dot);
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('r', '3');
+      circle.setAttribute('fill', color);
+      circle.setAttribute('class', 'travel-dot');
+
+      const anim = document.createElementNS('http://www.w3.org/2000/svg', 'animateMotion');
+      anim.setAttribute('dur', '1.8s');
+      anim.setAttribute('repeatCount', 'indefinite');
+      anim.setAttribute('keyTimes', '0;0.05;0.95;1');
+      anim.setAttribute('keyPoints', '0;0;1;1');
+      anim.setAttribute('calcMode', 'linear');
+      const mpath = document.createElementNS('http://www.w3.org/2000/svg', 'mpath');
+      mpath.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', `#${pathId}`);
+      anim.appendChild(mpath);
+
+      const fadeAnim = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+      fadeAnim.setAttribute('attributeName', 'opacity');
+      fadeAnim.setAttribute('dur', '1.8s');
+      fadeAnim.setAttribute('repeatCount', 'indefinite');
+      fadeAnim.setAttribute('keyTimes', '0;0.05;0.95;1');
+      fadeAnim.setAttribute('values', '0;1;1;0');
+      fadeAnim.setAttribute('calcMode', 'linear');
+
+      circle.appendChild(anim);
+      circle.appendChild(fadeAnim);
+      svgLayer.appendChild(circle);
     }
 
-    function createCategoryNode(x, y, data, catId) {
-      const isActive = activeCategory === catId;
-      const isDimmed = activeCategory !== null && !isActive;
+    // ── Top-Level node (EXECUTIVO / GESTÃO) ────────────────────────
 
-      // Main Node Circle
+    function createTopLevelNode(x, y, tl, index) {
+      const isActive = activeTopLevel === tl.id;
+      const isDimmed = activeTopLevel !== null && !isActive;
+      const delay = index * 90;
+
       const node = document.createElement('div');
-      node.className = `node-container item-${catId}`;
-      node.style.left = x + 'px';
-      node.style.top = y + 'px';
-      node.style.width = '70px';
-      node.style.height = '70px';
-      node.style.border = '2px solid';
+      node.style.position   = 'absolute';
+      node.style.left       = x + 'px';
+      node.style.top        = y + 'px';
+      node.style.transform  = isActive
+        ? 'translate(-50%, -50%) scale(1.07)'
+        : 'translate(-50%, -50%)';
+      node.style.zIndex     = '20';
+      node.style.cursor     = 'pointer';
+      node.style.opacity    = isDimmed ? '0.35' : '1';
+      node.style.transition = 'all 0.3s cubic-bezier(0.4,0,0.2,1)';
+      node.style.animationDelay = delay + 'ms';
+      node.className = 'animate-node-reveal';
 
-      if (isActive) {
-        node.style.borderColor = data.color;
-        node.style.boxShadow = `0 4px 15px ${data.color}40`;
-        node.style.transform = 'translate(-50%, -50%) scale(1.1)';
-      } else {
-        node.style.borderColor = data.color;
-        node.style.boxShadow = `0 4px 10px ${data.color}20`;
-        node.style.opacity = isDimmed ? '0.4' : '1';
-      }
-
-      node.innerHTML = `<i data-feather="${data.icon}" style="color: ${data.color};" class="w-7 h-7 transition-colors duration-300"></i>`;
+      node.innerHTML = `
+        <div style="
+          background: ${isActive ? tl.color : '#ffffff'};
+          border: 2px solid ${tl.color};
+          border-radius: 10px;
+          padding: 14px 32px;
+          box-shadow: ${isActive ? `0 6px 22px ${tl.color}45` : `0 2px 10px ${tl.color}22`};
+          transition: all 0.3s ease;
+          display: flex; align-items: center; gap: 9px;
+        ">
+          <i data-feather="${tl.icon}" style="color:${isActive ? '#fff' : tl.color};width:16px;height:16px;flex-shrink:0;"></i>
+          <span style="
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: ${isActive ? '#ffffff' : tl.color};
+            white-space: nowrap;
+          ">${tl.label}</span>
+        </div>
+      `;
 
       node.onclick = (e) => {
         e.stopPropagation();
-        activeCategory = isActive ? null : catId;
+        activeTopLevel  = isActive ? null : tl.id;
+        activeSector    = null;
+        activeCategory  = null;
+        isAnimating     = true;
+        animateDiamonds = false;
         renderHub();
+        isAnimating = false;
       };
 
-      // Main Label (Pill under node)
-      const label = document.createElement('div');
-      label.className = `node-label mt-5`;
-      label.style.left = x + 'px';
-      label.style.top = (y + 35) + 'px';
-      label.style.opacity = isDimmed ? '0.4' : '1';
+      node.onmouseover = () => {
+        if (!isActive) node.querySelector('div').style.boxShadow = `0 6px 22px ${tl.color}38`;
+      };
+      node.onmouseout = () => {
+        if (!isActive) node.querySelector('div').style.boxShadow = `0 2px 10px ${tl.color}22`;
+      };
 
-      // Different label styling based on active state
-      if (isActive) {
-        label.innerHTML = `<span class="text-[10px] md:text-[11px] font-bold tracking-widest uppercase bg-white border px-4 py-1.5 rounded-full shadow-sm" style="color: ${data.color}; border-color: ${data.color}">${data.category}</span>`;
-      } else {
-        label.innerHTML = `<span class="text-[10px] md:text-[11px] font-semibold tracking-widest uppercase bg-white border px-4 py-1.5 rounded-full shadow-sm" style="color: ${data.color}; border-color: ${data.color}40;">${data.category}</span>`;
-      }
-
-      nodesContainer.appendChild(label);
       nodesContainer.appendChild(node);
     }
 
-    // Creates the vertically aligned column of sub-items
-    function createSubItemsList(x, startY, cat) {
+    // ── Executivo sub-items (Dashboard / KPIs) ───────────────────────
+
+    function createExecutivoItems(x, startY, tl) {
+      const topOffset = startY + 90;
       const container = document.createElement('div');
       container.className = 'sub-items-container';
-      container.style.left = x + 'px';
-      // Start rendering sub-items exactly beneath the category label (e.g. y + 90)
-      const topOffset = startY + 95;
-      container.style.top = topOffset + 'px';
+      container.style.position = 'absolute';
+      container.style.left = (x - 120) + 'px';
+      container.style.top  = topOffset + 'px';
 
-      cat.items.forEach((item, idx) => {
+      tl.items.forEach((item, idx) => {
         const row = document.createElement('div');
-        row.className = 'sub-item-row';
-
-        // Content
+        row.className = 'sub-item-row animate-subitem-reveal';
+        row.style.animationDelay = (idx * 65) + 'ms';
+        row.style.borderLeft = `3px solid ${tl.color}`;
         row.innerHTML = `
-                    <i data-feather="${item.icon}" class="w-4 h-4 sub-item-icon"></i>
-                    <span class="sub-item-text">${item.name}</span>
-                `;
-
+          <i data-feather="${item.icon}" class="w-4 h-4 sub-item-icon" style="color:${tl.color};"></i>
+          <span class="sub-item-text" style="color:${tl.color};">${item.name}</span>
+        `;
         row.onclick = (e) => {
           e.stopPropagation();
-          if (item.url && item.url !== "#") {
-            window.location.href = item.url;
-          } else {
-            showToast("Módulo em Desenvolvimento");
-          }
+          if (item.url && item.url !== '#') window.location.href = item.url;
+          else showToast('Módulo em Desenvolvimento');
         };
-
         container.appendChild(row);
       });
 
       nodesContainer.appendChild(container);
 
-      // Draw a single straight line from the category label down behind the sub-items for visual "spine" connection
-      const totalHeight = (cat.items.length * (40 + 16)); // approx height of each row + gap
+      const totalHeight = tl.items.length * 56;
+      createVerticalConnection(x, startY + 44, topOffset + totalHeight - 36, tl.color, `${tl.id}-spine`);
+
+      return topOffset + totalHeight;
+    }
+
+    // ── Sector node (MECANIZADA / URBANA / TÉCNICA) ─────────────────
+
+    function createSectorNode(x, y, sector, index) {
+      const isActive = activeSector === sector.id;
+      const isDimmed = activeSector !== null && !isActive;
+      const delay = index * 80; // stagger ms
+
+      const node = document.createElement('div');
+      node.style.position   = 'absolute';
+      node.style.left       = x + 'px';
+      node.style.top        = y + 'px';
+      node.style.transform  = isActive
+        ? 'translate(-50%, -50%) scale(1.06)'
+        : 'translate(-50%, -50%)';
+      node.style.zIndex     = '20';
+      node.style.cursor     = 'pointer';
+      node.style.opacity    = isDimmed ? '0.35' : '1';
+      node.style.transition = 'all 0.3s cubic-bezier(0.4,0,0.2,1)';
+      node.style.animationDelay = delay + 'ms';
+      // Sectors are always static - no animation
+
+      node.innerHTML = `
+        <div style="
+          background: ${isActive ? sector.color : '#ffffff'};
+          border: 2px solid ${sector.color};
+          border-radius: 8px;
+          padding: 13px 28px;
+          box-shadow: ${isActive ? `0 4px 18px ${sector.color}40` : `0 2px 8px ${sector.color}18`};
+          transition: all 0.3s ease;
+        ">
+          <span style="
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: ${isActive ? '#ffffff' : sector.color};
+            white-space: nowrap;
+          ">${sector.label}</span>
+        </div>
+      `;
+
+      node.onclick = (e) => {
+        e.stopPropagation();
+        if (sector.id !== 'mecanizada') {
+          showToast('Setor em Desenvolvimento');
+          return;
+        }
+        activeSector   = isActive ? null : sector.id;
+        activeCategory = null;
+        isAnimating    = true;
+        animateDiamonds = (activeSector === 'mecanizada'); // only animate diamonds on fresh open
+        renderHub();
+        isAnimating    = false;
+        animateDiamonds = false;
+      };
+
+      node.onmouseover = () => {
+        if (!isActive) node.querySelector('div').style.boxShadow = `0 6px 20px ${sector.color}35`;
+      };
+      node.onmouseout = () => {
+        if (!isActive) node.querySelector('div').style.boxShadow = `0 2px 8px ${sector.color}18`;
+      };
+
+      nodesContainer.appendChild(node);
+    }
+
+    // ── Category node (LOG / ADMIN / SEG / FROTA) ───────────────────
+
+    function createCategoryNode(x, y, data, catId, index = 0) {
+      const isActive = activeCategory === catId;
+      const isDimmed = activeCategory !== null && !isActive;
+      const size = 58;
+      const delay = index * 70;
+
+      const node = document.createElement('div');
+      node.className = 'cat-diamond' + (animateDiamonds ? ' animate-diamond-reveal' : '');
+      node.style.left             = x + 'px';
+      node.style.top              = y + 'px';
+      node.style.width            = size + 'px';
+      node.style.height           = size + 'px';
+      node.style.borderColor      = data.color;
+      node.style.boxShadow        = isActive ? `0 6px 20px ${data.color}45` : `0 3px 10px ${data.color}20`;
+      node.style.opacity          = isDimmed ? '0.35' : '1';
+      node.style.animationDelay   = delay + 'ms';
+      if (isActive) node.style.transform = 'translate(-50%,-50%) rotate(45deg) scale(1.1)';
+
+      node.innerHTML = `
+        <div class="cat-diamond-inner">
+          <i data-feather="${data.icon}" style="color:${data.color};" class="w-6 h-6"></i>
+        </div>
+      `;
+
+      node.onclick = (e) => {
+        e.stopPropagation();
+        activeCategory  = isActive ? null : catId;
+        isAnimating     = true;
+        animateDiamonds = false; // diamonds already visible, don't re-animate
+        renderHub();
+        isAnimating     = false;
+      };
+
+      const label = document.createElement('div');
+      label.className = 'node-label mt-5' + (animateDiamonds ? ' animate-label-reveal' : '');
+      label.style.left           = x + 'px';
+      label.style.top            = (y + 30) + 'px';
+      label.style.opacity        = isDimmed ? '0.35' : '1';
+      label.style.animationDelay = (delay + 60) + 'ms';
+      label.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <span style="
+            font-size:10px; font-weight:700; letter-spacing:0.15em;
+            text-transform:uppercase; color:${data.color};
+            background:#fff; border:1px solid ${isActive ? data.color : data.color + '40'};
+            padding:4px 14px; border-radius:100px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+          ">${data.category}</span>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <span class="status-pulse" style="background:${data.color};width:5px;height:5px;"></span>
+            <span style="font-size:9px;color:#94a3b8;letter-spacing:0.08em;font-weight:500;">${data.items.length} módulos</span>
+          </div>
+        </div>
+      `;
+
+      nodesContainer.appendChild(label);
+      nodesContainer.appendChild(node);
+    }
+
+    // ── Sub-items list ───────────────────────────────────────────────
+
+    function createSubItemsList(x, startY, cat) {
+      const container  = document.createElement('div');
+      container.className = 'sub-items-container';
+      container.style.position = 'absolute';
+      container.style.left = (x - 120) + 'px';
+      const topOffset  = startY + 95;
+      container.style.top = topOffset + 'px';
+
+      cat.items.forEach((item, idx) => {
+        const row = document.createElement('div');
+        row.className = 'sub-item-row' + (isAnimating ? ' animate-subitem-reveal' : '');
+        row.style.animationDelay = (idx * 60) + 'ms';
+        row.innerHTML = `
+          <i data-feather="${item.icon}" class="w-4 h-4 sub-item-icon"></i>
+          <span class="sub-item-text">${item.name}</span>
+        `;
+        row.onclick = (e) => {
+          e.stopPropagation();
+          if (item.url && item.url !== '#') {
+            window.location.href = item.url;
+          } else {
+            showToast('Módulo em Desenvolvimento');
+          }
+        };
+        container.appendChild(row);
+      });
+
+      nodesContainer.appendChild(container);
+
+      const totalHeight = cat.items.length * 56;
       createVerticalConnection(x, startY + 50, topOffset + totalHeight - 40, cat.color, `${cat.id}-spine`);
     }
 
+    // ── Toast ────────────────────────────────────────────────────────
 
-    // Elegant Toast Function
     function showToast(message) {
       const toast = document.getElementById('toast-container');
-      const text = document.getElementById('toast-message');
-      text.textContent = message;
-
+      document.getElementById('toast-message').textContent = message;
       toast.classList.add('show');
-
-      setTimeout(() => {
-        toast.classList.remove('show');
-      }, 3000);
+      setTimeout(() => { toast.classList.remove('show'); }, 3000);
     }
 
+    // ── Main render ──────────────────────────────────────────────────
 
     function renderHub() {
-      // Clear current renders
-      svgLayer.innerHTML = '';
+      svgLayer.innerHTML      = '';
       nodesContainer.innerHTML = '';
       dimensions = { w: window.innerWidth, h: window.innerHeight };
       const isMobile = dimensions.w < 768;
 
-      // --- UNIFIED LAYOUT (Horizontal Branching for all screens) ---
-      // Distribute items across a fixed virtual width to act as a canvas
-      // On mobile keep it tighter (e.g. 800px) so nodes are closer, Desktop keep natural spread
       const virtualWidth = isMobile ? Math.max(dimensions.w, 900) : dimensions.w;
       const cx = virtualWidth / 2;
-      const logoY = dimensions.h * 0.25; // SGE Logo at 25% height from top
-      const logoBottomAnchorY = logoY + 95; // Bottom of SGE logo
 
-      const clientNodeY = logoY + 160;
-      const clientNodeBottomY = clientNodeY + 20;
+      const centerY       = dimensions.h * 0.25;
+      const centerRadius  = 62;
+      const centerBottomY = centerY + centerRadius;
 
-      // Ensure the app container expands if dynamic width exceeds viewport
+      const centerNode = document.getElementById('center-node');
+      if (centerNode) {
+        centerNode.style.left = cx + 'px';
+        centerNode.style.top  = centerY + 'px';
+      }
+
       const appContainer = document.getElementById('app');
       let requiredHeight = dimensions.h;
 
-      // Position the Client Node visually
-      const clientNode = document.getElementById('client-node');
-      if (clientNode) {
-        clientNode.style.left = cx + "px";
-        clientNode.style.top = clientNodeY + "px";
-      }
+      // ── Level 1: Sector nodes ──
+      const sectorSpread  = isMobile ? 0.75 : 0.45;
+      const sectorTotalW  = virtualWidth * sectorSpread;
+      const sectorStartX  = (virtualWidth - sectorTotalW) / 2;
+      const sectorSpacing = sectorTotalW / (sectors.length - 1);
+      const sectorY       = centerY + 200;
 
-      // Draw connection from SGE to GRUPO GPS
-      createVerticalConnection(cx, logoBottomAnchorY, clientNodeY - 20, '#64748b', 'sge-to-client');
-
-      // Use wider spread on desktop (55%) vs tighter on mobile (85% of virtualWidth)
-      const spreadPercentage = isMobile ? 0.90 : 0.55;
-      const totalWidthAvailable = virtualWidth * spreadPercentage;
-      const startX = (virtualWidth - totalWidthAvailable) / 2;
-      const spacing = totalWidthAvailable / 3;
-
-      const xPositions = {
-        'log': startX,
-        'admin': startX + spacing,
-        'seg': startX + (spacing * 2),
-        'frota': startX + (spacing * 3)
-      };
-
-      const categoryY = logoY + 250;
-
-      menuData.forEach((cat) => {
-        const catX = xPositions[cat.id];
-        const catY = categoryY;
-
-        // Connection from Client Node (Grupo GPS) down to this category
-        const lineColor = (activeCategory === cat.id || activeCategory === null) ? cat.color : '#cbd5e1';
-        createOrthogonalConnection(cx, clientNodeBottomY, catX, catY - 35, lineColor, cat.id);
-
-        // Render Main Category Node
-        createCategoryNode(catX, catY, cat, cat.id);
-
-        let itemsBottom = catY + 50;
-
-        // Render Sub Items (Only if Active) IN A PERFECT COLUMN
-        if (activeCategory === cat.id) {
-          createSubItemsList(catX, catY, cat);
-          itemsBottom = catY + 95 + (cat.items.length * 56);
-        }
-
-        if (itemsBottom + 100 > requiredHeight) {
-          requiredHeight = itemsBottom + 100;
-        }
+      sectors.forEach((sector, i) => {
+        const sx = sectorStartX + i * sectorSpacing;
+        const lineColor = (activeSector === sector.id || activeSector === null)
+          ? sector.color : '#cbd5e1';
+        createOrthogonalConnection(cx, centerBottomY, sx, sectorY - 22, lineColor, `center-${sector.id}`);
+        createSectorNode(sx, sectorY, sector, i);
       });
 
-      appContainer.style.minWidth = virtualWidth + "px";
-      appContainer.style.minHeight = requiredHeight + "px";
-      svgLayer.style.width = virtualWidth + "px";
-      svgLayer.style.height = requiredHeight + "px";
+      // ── Level 2: Category nodes (only when MECANIZADA is active) ──
+      if (activeSector === 'mecanizada') {
+        const mecIdx     = sectors.findIndex(s => s.id === 'mecanizada');
+        const mecX       = sectorStartX + mecIdx * sectorSpacing;
+        const mecBottomY = sectorY + 22;
 
-      // Re-bind icons
+        const catSpread  = isMobile ? 0.85 : 0.50;
+        const catTotalW  = virtualWidth * catSpread;
+        const catStartX  = (virtualWidth - catTotalW) / 2;
+        const catSpacing = catTotalW / (menuData.length - 1);
+        const categoryY  = sectorY + 195;
+
+        menuData.forEach((cat, i) => {
+          const catX      = catStartX + i * catSpacing;
+          const lineColor = (activeCategory === cat.id || activeCategory === null)
+            ? cat.color : '#cbd5e1';
+
+          createOrthogonalConnection(mecX, mecBottomY, catX, categoryY - 29, lineColor, `mec-${cat.id}`);
+          createCategoryNode(catX, categoryY, cat, cat.id, i);
+
+          let itemsBottom = categoryY + 50;
+          if (activeCategory === cat.id) {
+            createSubItemsList(catX, categoryY, cat);
+            itemsBottom = categoryY + 95 + (cat.items.length * 56);
+          }
+          if (itemsBottom + 100 > requiredHeight) requiredHeight = itemsBottom + 100;
+        });
+
+        if (categoryY + 300 > requiredHeight) requiredHeight = categoryY + 300;
+      }
+
+      if (sectorY + 250 > requiredHeight) requiredHeight = sectorY + 250;
+
+      appContainer.style.minWidth  = virtualWidth + 'px';
+      appContainer.style.minHeight = requiredHeight + 'px';
+      svgLayer.style.width         = virtualWidth + 'px';
+      svgLayer.style.height        = requiredHeight + 'px';
+
       feather.replace();
     }
 
     function resetHub() {
+      activeSector   = null;
       activeCategory = null;
       renderHub();
     }
 
-    // Initialization
+    // ── Mobile render ─────────────────────────────────────────────────
+    let mActiveSector   = null;
+    let mActiveCategory = null;
+
+    function renderMobile() {
+      const hub = document.getElementById('mobile-hub');
+      hub.innerHTML = '';
+
+      const card = document.createElement('div');
+      card.className = 'm-center-card';
+      card.onclick = () => { mActiveSector = null; mActiveCategory = null; renderMobile(); };
+      card.innerHTML = `
+        <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;letter-spacing:0.22em;text-transform:uppercase;color:#94a3b8;">Grupo</span>
+        <span style="font-family:'Inter',sans-serif;font-size:44px;font-weight:800;letter-spacing:-0.03em;color:#0a2fa8;line-height:1;">GPS</span>
+        <div style="width:28px;height:2px;background:#0a2fa8;border-radius:2px;opacity:0.25;margin-top:3px;"></div>
+      `;
+      hub.appendChild(card);
+
+      sectors.forEach((sector) => {
+        const isActive = mActiveSector === sector.id;
+        const isDimmed = mActiveSector !== null && !isActive;
+
+        const line = document.createElement('div');
+        line.className = 'm-connector';
+        line.style.height     = '32px';
+        line.style.background = isActive ? sector.color : '#cbd5e1';
+        line.style.opacity    = isDimmed ? '0.3' : '1';
+        hub.appendChild(line);
+
+        const sectorRow = document.createElement('div');
+        sectorRow.className = 'm-sector-row';
+
+        const pill = document.createElement('div');
+        pill.className = 'm-sector-pill';
+        pill.style.borderColor = sector.color;
+        pill.style.color       = isActive ? '#fff' : sector.color;
+        pill.style.background  = isActive ? sector.color : '#fff';
+        pill.style.opacity     = isDimmed ? '0.35' : '1';
+        pill.style.boxShadow   = isActive ? `0 4px 18px ${sector.color}40` : `0 2px 8px ${sector.color}15`;
+        pill.textContent       = sector.label;
+        pill.onclick = (e) => {
+          e.stopPropagation();
+          if (sector.id !== 'mecanizada') { showToast('Setor em Desenvolvimento'); return; }
+          mActiveSector   = isActive ? null : sector.id;
+          mActiveCategory = null;
+          renderMobile();
+        };
+        sectorRow.appendChild(pill);
+
+        if (sector.id === 'mecanizada') {
+          const subLine = document.createElement('div');
+          subLine.className = 'm-connector';
+          subLine.style.height     = isActive ? '24px' : '0';
+          subLine.style.background = sector.color;
+          subLine.style.transition = 'height 0.4s ease';
+          sectorRow.appendChild(subLine);
+
+          const grid = document.createElement('div');
+          grid.className = 'm-categories-grid' + (isActive ? ' open' : '');
+          grid.style.margin = '0 auto';
+
+          menuData.forEach((cat, ci) => {
+            const isCatActive = mActiveCategory === cat.id;
+            const catCard = document.createElement('div');
+            catCard.className = 'm-cat-card';
+            catCard.style.borderColor    = cat.color;
+            catCard.style.boxShadow      = isCatActive ? `0 4px 16px ${cat.color}40` : `0 2px 8px ${cat.color}18`;
+            catCard.style.background     = isCatActive ? cat.color + '0d' : '#fff';
+            catCard.style.animationDelay = (ci * 60) + 'ms';
+            catCard.innerHTML = `
+              <i data-feather="${cat.icon}" style="color:${cat.color};width:22px;height:22px;"></i>
+              <span class="m-cat-label" style="color:${cat.color};">${cat.category}</span>
+              <div style="display:flex;align-items:center;gap:3px;">
+                <span class="status-pulse" style="background:${cat.color};width:5px;height:5px;"></span>
+                <span style="font-size:9px;color:#94a3b8;font-weight:500;">${cat.items.length} módulos</span>
+              </div>
+            `;
+            catCard.onclick = (e) => {
+              e.stopPropagation();
+              mActiveCategory = isCatActive ? null : cat.id;
+              renderMobile();
+            };
+            grid.appendChild(catCard);
+          });
+          sectorRow.appendChild(grid);
+
+          if (isActive && mActiveCategory) {
+            const activeCat = menuData.find(c => c.id === mActiveCategory);
+            if (activeCat) {
+              const subLine2 = document.createElement('div');
+              subLine2.className = 'm-connector';
+              subLine2.style.height     = '20px';
+              subLine2.style.background = activeCat.color;
+              sectorRow.appendChild(subLine2);
+
+              const subitems = document.createElement('div');
+              subitems.className = 'm-subitems open';
+              subitems.style.margin = '0 auto';
+              activeCat.items.forEach((item, ii) => {
+                const row = document.createElement('div');
+                row.className = 'm-subitem-row';
+                row.style.animationDelay = (ii * 55) + 'ms';
+                row.style.borderLeft = `3px solid ${activeCat.color}`;
+                row.innerHTML = `
+                  <i data-feather="${item.icon}" style="color:${activeCat.color};width:16px;height:16px;flex-shrink:0;"></i>
+                  <span style="font-size:12px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:0.05em;">${item.name}</span>
+                `;
+                row.onclick = (e) => {
+                  e.stopPropagation();
+                  if (item.url && item.url !== '#') window.location.href = item.url;
+                  else showToast('Módulo em Desenvolvimento');
+                };
+                subitems.appendChild(row);
+              });
+              sectorRow.appendChild(subitems);
+            }
+          }
+        }
+
+        hub.appendChild(sectorRow);
+      });
+
+      feather.replace();
+    }
+
     window.onload = () => {
       renderHub();
+      renderMobile();
     };
-
     window.onresize = () => {
       renderHub();
+      renderMobile();
     };
 
-    // Center screen on initial load specifically for mobile to view logo
     const scrollToCenter = () => {
-      const currentDimensions = { w: window.innerWidth, h: window.innerHeight };
-      const isMobile = currentDimensions.w < 768;
-      if (isMobile) {
-        const virtualWidth = Math.max(currentDimensions.w, 900);
-        // Calculate center scroll offset to position logo in middle of screen
-        const scrollPositionX = (virtualWidth - window.innerWidth) / 2;
-
-        // Request animation frame ensures DOM is fully painted
+      const cd = { w: window.innerWidth, h: window.innerHeight };
+      if (cd.w < 768) {
+        const vw = Math.max(cd.w, 900);
         setTimeout(() => {
-          window.scrollTo({
-            left: scrollPositionX,
-            top: 0,
-            behavior: 'smooth'
-          });
+          window.scrollTo({ left: (vw - window.innerWidth) / 2, top: 0, behavior: 'smooth' });
         }, 100);
       }
     };
-
-    // Auto-center after first render
     setTimeout(scrollToCenter, 300);
 
-    // --- Drag to Scroll Implementation (Canvas feeling) exclusively for Touch ---
+    // --- Touch drag-to-scroll ---
     const appContainer = document.getElementById('app');
-    let isDragging = false;
-    let startX, startY, scrollLeft, scrollTop;
+    let isDragging = false, startX, startY, scrollLeft, scrollTop;
+    const isTouchDevice = () => ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 
-    // Only allow drag actions on mobile
-    const isTouchDevice = () => {
-      return (('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0));
-    };
-
-    const startDrag = (pageX, pageY) => {
+    appContainer.addEventListener('touchstart', (e) => {
       if (!isTouchDevice()) return;
       isDragging = true;
-      startX = pageX - document.documentElement.scrollLeft;
-      startY = pageY - document.documentElement.scrollTop;
+      startX = e.touches[0].pageX - document.documentElement.scrollLeft;
+      startY = e.touches[0].pageY - document.documentElement.scrollTop;
       scrollLeft = document.documentElement.scrollLeft;
-      scrollTop = document.documentElement.scrollTop;
-    };
+      scrollTop  = document.documentElement.scrollTop;
+    }, { passive: true });
 
-    const doDrag = (pageX, pageY) => {
-      if (!isDragging || !isTouchDevice()) return;
-      const x = pageX - startX;
-      const y = pageY - startY;
-
-      // Ensure we don't scroll past the logical boundaries
-      const maxScrollLeft = document.documentElement.scrollWidth - window.innerWidth;
-      const maxScrollTop = document.documentElement.scrollHeight - window.innerHeight;
-
-      // Calculate bounded scrolls
-      let targetLeft = scrollLeft - x;
-      let targetTop = scrollTop - y;
-
-      if (targetLeft < 0) targetLeft = 0;
-      if (targetLeft > maxScrollLeft) targetLeft = maxScrollLeft;
-      if (targetTop < 0) targetTop = 0;
-      if (targetTop > maxScrollTop) targetTop = maxScrollTop;
-
-      window.scrollTo(targetLeft, targetTop);
-    };
-
-    const endDrag = () => {
-      isDragging = false;
-    };
-
-    // Touch events for drag to scroll (ONLY on Mobile)
-    appContainer.addEventListener('touchstart', (e) => startDrag(e.touches[0].pageX, e.touches[0].pageY), { passive: true });
     appContainer.addEventListener('touchmove', (e) => {
       if (!isDragging || !isTouchDevice()) return;
-      // Let vertical native scroll work occasionally, but mostly capture drag
-      doDrag(e.touches[0].pageX, e.touches[0].pageY);
+      const x = e.touches[0].pageX - startX;
+      const y = e.touches[0].pageY - startY;
+      window.scrollTo(
+        Math.min(Math.max(scrollLeft - x, 0), document.documentElement.scrollWidth  - window.innerWidth),
+        Math.min(Math.max(scrollTop  - y, 0), document.documentElement.scrollHeight - window.innerHeight)
+      );
     }, { passive: true });
-    appContainer.addEventListener('touchend', endDrag);
+
+    appContainer.addEventListener('touchend', () => { isDragging = false; });
+
+
+    // ── Particle Canvas ──────────────────────────────────────────────
+    // Runs on a fixed canvas behind the grid and all UI.
+    // Dots are slate-grey so they blend with the light theme.
+    // On hover the particles are gently pushed away from the cursor.
+    (function () {
+      const canvas = document.getElementById('bg-canvas');
+      const ctx    = canvas.getContext('2d');
+      let W, H;
+      const COUNT = 120;
+      const mouse = { x: -9999, y: -9999 };
+
+      function resize() {
+        W = canvas.width  = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+      }
+
+      window.addEventListener('resize', resize);
+      window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+      // Also support touch position for mobile
+      window.addEventListener('touchmove', e => {
+        mouse.x = e.touches[0].clientX;
+        mouse.y = e.touches[0].clientY;
+      }, { passive: true });
+      window.addEventListener('touchend', () => { mouse.x = -9999; mouse.y = -9999; });
+
+      class Particle {
+        constructor() { this.spawn(true); }
+        spawn(init) {
+          this.x  = Math.random() * W;
+          this.y  = init ? Math.random() * H : -5;
+          this.vx = (Math.random() - 0.5) * 0.35;
+          this.vy = (Math.random() - 0.5) * 0.35;
+          this.r  = Math.random() * 1.2 + 0.4;
+          this.alpha = Math.random() * 0.20 + 0.12;
+        }
+        update() {
+          // Mouse repulsion
+          const dx   = this.x - mouse.x;
+          const dy   = this.y - mouse.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 110 && dist > 0) {
+            const f = (110 - dist) / 110;
+            this.vx += (dx / dist) * f * 0.09;
+            this.vy += (dy / dist) * f * 0.09;
+          }
+          // Friction + speed cap
+          this.vx *= 0.988;
+          this.vy *= 0.988;
+          const spd = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+          if (spd > 2) { this.vx = this.vx / spd * 2; this.vy = this.vy / spd * 2; }
+
+          this.x += this.vx;
+          this.y += this.vy;
+
+          // Regenerate from a random edge when off-screen
+          if (this.x < -20 || this.x > W + 20 || this.y < -20 || this.y > H + 20) {
+            const edge = Math.floor(Math.random() * 4);
+            if (edge === 0) { this.x = Math.random() * W; this.y = -5; this.vx = (Math.random()-0.5)*0.35; this.vy = Math.random()*0.3+0.1; }
+            else if (edge === 1) { this.x = W+5; this.y = Math.random()*H; this.vx = -(Math.random()*0.3+0.1); this.vy = (Math.random()-0.5)*0.35; }
+            else if (edge === 2) { this.x = Math.random()*W; this.y = H+5; this.vx = (Math.random()-0.5)*0.35; this.vy = -(Math.random()*0.3+0.1); }
+            else { this.x = -5; this.y = Math.random()*H; this.vx = Math.random()*0.3+0.1; this.vy = (Math.random()-0.5)*0.35; }
+            this.r = Math.random() * 1.2 + 0.4;
+            this.alpha = Math.random() * 0.20 + 0.12;
+          }
+        }
+        draw() {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(71, 85, 105, ${this.alpha})`;
+          ctx.fill();
+        }
+      }
+
+      function drawLines(pts) {
+        for (let i = 0; i < pts.length; i++) {
+          for (let j = i + 1; j < pts.length; j++) {
+            const dx   = pts[i].x - pts[j].x;
+            const dy   = pts[i].y - pts[j].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 100) {
+              ctx.beginPath();
+              ctx.moveTo(pts[i].x, pts[i].y);
+              ctx.lineTo(pts[j].x, pts[j].y);
+              ctx.strokeStyle = `rgba(71, 85, 105, ${(1 - dist / 100) * 0.18})`;
+              ctx.lineWidth = 0.8;
+              ctx.stroke();
+            }
+          }
+        }
+      }
+
+      resize();
+      const particles = Array.from({ length: COUNT }, () => new Particle());
+
+      (function loop() {
+        ctx.clearRect(0, 0, W, H);
+        particles.forEach(p => { p.update(); p.draw(); });
+        drawLines(particles);
+        requestAnimationFrame(loop);
+      })();
+    })();
 
   </script>
 </body>
