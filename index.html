@@ -121,9 +121,11 @@
 
     /* Vignette edge darkening */
     #vignette {
-      position: fixed; inset: 0;
-      background: radial-gradient(ellipse at 50% 40%, transparent 45%, rgba(180,192,210,0.18) 100%);
-      pointer-events: none; z-index: 1;
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 40%, transparent 45%, rgba(180, 192, 210, 0.18) 100%);
+      pointer-events: none;
+      z-index: 1;
     }
 
     /* Smooth curves on SVG lines */
@@ -135,7 +137,10 @@
       stroke-linejoin: round;
       transition: stroke 0.4s ease, opacity 0.4s ease;
     }
-    .line-bg.dimmed { opacity: 0.18; }
+
+    .line-bg.dimmed {
+      opacity: 0.18;
+    }
 
     /* Category diamond node */
     .cat-diamond {
@@ -143,69 +148,128 @@
       transform: translate(-50%, -50%) rotate(45deg);
       background: #ffffff;
       border: 2px solid;
-      transition: all 0.35s cubic-bezier(0.4,0,0.2,1);
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
       z-index: 20;
-      display: flex; align-items: center; justify-content: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
+
     .cat-diamond:hover {
       transform: translate(-50%, -50%) rotate(45deg) scale(1.1);
-      box-shadow: 0 8px 24px -4px rgba(0,0,0,0.12);
+      box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.12);
     }
+
     .cat-diamond-inner {
       transform: rotate(-45deg);
-      display: flex; align-items: center; justify-content: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     /* Status pulse dot */
     .status-pulse {
-      width: 7px; height: 7px; border-radius: 50%;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
       display: inline-block;
       animation: status-blink 2.4s ease-in-out infinite;
     }
+
     @keyframes status-blink {
-      0%,100% { opacity: 1; transform: scale(1); }
-      50%      { opacity: 0.4; transform: scale(0.75); }
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.4;
+        transform: scale(0.75);
+      }
     }
 
     /* Center node card hover */
     #center-node:hover .center-card {
-      box-shadow: 0 8px 32px rgba(10,47,168,0.12), 0 2px 8px rgba(0,0,0,0.06);
-      border-color: rgba(10,47,168,0.2);
+      box-shadow: 0 8px 32px rgba(10, 47, 168, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+      border-color: rgba(10, 47, 168, 0.2);
     }
 
     /* Sector expand animation */
     @keyframes nodeReveal {
-      from { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
-      to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.6);
+      }
+
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
     }
+
     @keyframes nodeRevealDiamond {
-      from { opacity: 0; transform: translate(-50%, -50%) rotate(45deg) scale(0.5); }
-      to   { opacity: 1; transform: translate(-50%, -50%) rotate(45deg) scale(1); }
+      from {
+        opacity: 0;
+        transform: translate(-50%, -50%) rotate(45deg) scale(0.5);
+      }
+
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%) rotate(45deg) scale(1);
+      }
     }
+
     @keyframes labelReveal {
-      from { opacity: 0; transform: translateX(-50%) translateY(10px); }
-      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
     }
+
     @keyframes lineReveal {
-      from { stroke-dashoffset: var(--path-len); }
-      to   { stroke-dashoffset: 0; }
+      from {
+        stroke-dashoffset: var(--path-len);
+      }
+
+      to {
+        stroke-dashoffset: 0;
+      }
     }
+
     @keyframes subItemReveal {
-      from { opacity: 0; transform: translateX(8px); }
-      to   { opacity: 1; transform: translateX(0); }
+      from {
+        opacity: 0;
+        transform: translateX(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
     }
+
     .animate-node-reveal {
-      animation: nodeReveal 0.45s cubic-bezier(0.34,1.56,0.64,1) both;
+      animation: nodeReveal 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
     }
+
     .animate-diamond-reveal {
-      animation: nodeRevealDiamond 0.45s cubic-bezier(0.34,1.56,0.64,1) both;
+      animation: nodeRevealDiamond 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
     }
+
     .animate-label-reveal {
-      animation: labelReveal 0.4s cubic-bezier(0.16,1,0.3,1) both;
+      animation: labelReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
     }
+
     .animate-subitem-reveal {
-      animation: subItemReveal 0.35s cubic-bezier(0.16,1,0.3,1) both;
+      animation: subItemReveal 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
     }
 
     /* ── MOBILE LAYOUT ──────────────────────────────────── */
@@ -223,16 +287,20 @@
     /* Center card mobile */
     .m-center-card {
       background: #fff;
-      border: 1px solid rgba(10,47,168,0.12);
+      border: 1px solid rgba(10, 47, 168, 0.12);
       border-radius: 16px;
       padding: 18px 36px 16px;
-      box-shadow: 0 4px 18px rgba(10,47,168,0.07);
-      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      box-shadow: 0 4px 18px rgba(10, 47, 168, 0.07);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
       cursor: pointer;
       transition: box-shadow 0.3s;
     }
+
     .m-center-card:hover {
-      box-shadow: 0 8px 32px rgba(10,47,168,0.12);
+      box-shadow: 0 8px 32px rgba(10, 47, 168, 0.12);
     }
 
     /* Vertical connector line */
@@ -276,9 +344,10 @@
       max-width: 360px;
       overflow: hidden;
       max-height: 0;
-      transition: max-height 0.5s cubic-bezier(0.16,1,0.3,1), opacity 0.4s ease;
+      transition: max-height 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
       opacity: 0;
     }
+
     .m-categories-grid.open {
       max-height: 600px;
       opacity: 1;
@@ -290,17 +359,24 @@
       border: 2px solid;
       border-radius: 12px;
       padding: 14px 10px;
-      display: flex; flex-direction: column;
-      align-items: center; gap: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
       cursor: pointer;
       transition: all 0.25s ease;
-      animation: fadeScaleIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+      animation: fadeScaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
     }
-    .m-cat-card:active { transform: scale(0.97); }
+
+    .m-cat-card:active {
+      transform: scale(0.97);
+    }
 
     .m-cat-label {
-      font-size: 10px; font-weight: 700;
-      letter-spacing: 0.12em; text-transform: uppercase;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
       text-align: center;
     }
 
@@ -310,15 +386,19 @@
       max-height: 0;
       width: 100%;
       max-width: 360px;
-      transition: max-height 0.4s cubic-bezier(0.16,1,0.3,1), opacity 0.3s ease;
+      transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
       opacity: 0;
     }
+
     .m-subitems.open {
       max-height: 400px;
       opacity: 1;
     }
+
     .m-subitem-row {
-      display: flex; align-items: center; gap: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
       background: #fff;
       border: 1px solid #e2e8f0;
       border-radius: 8px;
@@ -326,24 +406,48 @@
       margin-bottom: 8px;
       cursor: pointer;
       transition: all 0.2s ease;
-      animation: subItemReveal 0.3s cubic-bezier(0.16,1,0.3,1) both;
+      animation: subItemReveal 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
     }
-    .m-subitem-row:last-child { margin-bottom: 0; }
-    .m-subitem-row:active { transform: translateX(4px); }
+
+    .m-subitem-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .m-subitem-row:active {
+      transform: translateX(4px);
+    }
 
     @keyframes fadeScaleIn {
-      from { opacity: 0; transform: scale(0.85); }
-      to   { opacity: 1; transform: scale(1); }
+      from {
+        opacity: 0;
+        transform: scale(0.85);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
     }
 
     /* Show/hide based on screen */
     @media (max-width: 767px) {
-      #app         { display: none !important; }
-      #mobile-hub  { display: flex !important; }
+      #app {
+        display: none !important;
+      }
+
+      #mobile-hub {
+        display: flex !important;
+      }
     }
+
     @media (min-width: 768px) {
-      #app         { display: block; }
-      #mobile-hub  { display: none !important; }
+      #app {
+        display: block;
+      }
+
+      #mobile-hub {
+        display: none !important;
+      }
     }
 
     #app {
@@ -391,7 +495,9 @@
       transition: color 0.2s ease;
     }
 
-    .sub-item-row:hover .sub-item-icon { color: #3b82f6; }
+    .sub-item-row:hover .sub-item-icon {
+      color: #3b82f6;
+    }
 
     .sub-item-text {
       font-size: 13px;
@@ -402,10 +508,14 @@
       transition: color 0.2s ease;
     }
 
-    .sub-item-row:hover .sub-item-text { color: #0f172a; }
+    .sub-item-row:hover .sub-item-text {
+      color: #0f172a;
+    }
 
     @keyframes spin {
-      100% { transform: scale(1.3) rotate(360deg); }
+      100% {
+        transform: scale(1.3) rotate(360deg);
+      }
     }
 
     /* Toast Notification */
@@ -435,7 +545,9 @@
       transform: translateX(-50%) translateY(0);
     }
 
-    #toast-container i { color: #3b82f6; }
+    #toast-container i {
+      color: #3b82f6;
+    }
   </style>
 </head>
 
@@ -446,7 +558,7 @@
   <!-- Vignette -->
   <div id="vignette"></div>
 
-<!-- Toast Notification Container -->
+  <!-- Toast Notification Container -->
   <div id="toast-container">
     <i data-feather="info" class="w-5 h-5"></i>
     <span id="toast-message" class="text-sm font-medium tracking-wide"></span>
@@ -458,8 +570,7 @@
     <svg id="svg-layer" class="connection-layer"></svg>
 
     <!-- Grupo GPS Center Node -->
-    <div id="center-node" onclick="resetHub()"
-      style="
+    <div id="center-node" onclick="resetHub()" style="
         position: absolute;
         transform: translate(-50%, -50%);
         z-index: 40;
@@ -468,8 +579,7 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-      "
-    >
+      ">
       <div class="center-card" style="
         background: #ffffff;
         border: 1px solid rgba(10,47,168,0.12);
@@ -569,18 +679,18 @@
     // Sectors — top level branches from Grupo GPS
     const sectors = [
       { id: 'mecanizada', label: 'MECANIZADA', icon: 'settings', color: '#0a2fa8' },
-      { id: 'urbana',     label: 'URBANA',     icon: 'map-pin',  color: '#0369a1' },
-      { id: 'tecnica',    label: 'TÉCNICA',    icon: 'tool',     color: '#0369a1' },
+      { id: 'urbana', label: 'URBANA', icon: 'map-pin', color: '#0369a1' },
+      { id: 'tecnica', label: 'TÉCNICA', icon: 'tool', color: '#0369a1' },
     ];
 
     // State
-    let activeSector     = null;
-    let activeCategory   = null;
-    let isAnimating      = false;
-    let animateDiamonds  = false; // only true when mecanizada is freshly opened
+    let activeSector = null;
+    let activeCategory = null;
+    let isAnimating = false;
+    let animateDiamonds = false; // only true when mecanizada is freshly opened
     let dimensions = { w: window.innerWidth, h: window.innerHeight };
 
-    const svgLayer      = document.getElementById('svg-layer');
+    const svgLayer = document.getElementById('svg-layer');
     const nodesContainer = document.getElementById('nodes-container');
 
     // ── Connection helpers (unchanged) ──────────────────────────────
@@ -674,15 +784,15 @@
       const delay = index * 90;
 
       const node = document.createElement('div');
-      node.style.position   = 'absolute';
-      node.style.left       = x + 'px';
-      node.style.top        = y + 'px';
-      node.style.transform  = isActive
+      node.style.position = 'absolute';
+      node.style.left = x + 'px';
+      node.style.top = y + 'px';
+      node.style.transform = isActive
         ? 'translate(-50%, -50%) scale(1.07)'
         : 'translate(-50%, -50%)';
-      node.style.zIndex     = '20';
-      node.style.cursor     = 'pointer';
-      node.style.opacity    = isDimmed ? '0.35' : '1';
+      node.style.zIndex = '20';
+      node.style.cursor = 'pointer';
+      node.style.opacity = isDimmed ? '0.35' : '1';
       node.style.transition = 'all 0.3s cubic-bezier(0.4,0,0.2,1)';
       node.style.animationDelay = delay + 'ms';
       node.className = 'animate-node-reveal';
@@ -712,10 +822,10 @@
 
       node.onclick = (e) => {
         e.stopPropagation();
-        activeTopLevel  = isActive ? null : tl.id;
-        activeSector    = null;
-        activeCategory  = null;
-        isAnimating     = true;
+        activeTopLevel = isActive ? null : tl.id;
+        activeSector = null;
+        activeCategory = null;
+        isAnimating = true;
         animateDiamonds = false;
         renderHub();
         isAnimating = false;
@@ -739,7 +849,7 @@
       container.className = 'sub-items-container';
       container.style.position = 'absolute';
       container.style.left = (x - 120) + 'px';
-      container.style.top  = topOffset + 'px';
+      container.style.top = topOffset + 'px';
 
       tl.items.forEach((item, idx) => {
         const row = document.createElement('div');
@@ -774,15 +884,15 @@
       const delay = index * 80; // stagger ms
 
       const node = document.createElement('div');
-      node.style.position   = 'absolute';
-      node.style.left       = x + 'px';
-      node.style.top        = y + 'px';
-      node.style.transform  = isActive
+      node.style.position = 'absolute';
+      node.style.left = x + 'px';
+      node.style.top = y + 'px';
+      node.style.transform = isActive
         ? 'translate(-50%, -50%) scale(1.06)'
         : 'translate(-50%, -50%)';
-      node.style.zIndex     = '20';
-      node.style.cursor     = 'pointer';
-      node.style.opacity    = isDimmed ? '0.35' : '1';
+      node.style.zIndex = '20';
+      node.style.cursor = 'pointer';
+      node.style.opacity = isDimmed ? '0.35' : '1';
       node.style.transition = 'all 0.3s cubic-bezier(0.4,0,0.2,1)';
       node.style.animationDelay = delay + 'ms';
       // Sectors are always static - no animation
@@ -814,12 +924,12 @@
           showToast('Setor em Desenvolvimento');
           return;
         }
-        activeSector   = isActive ? null : sector.id;
+        activeSector = isActive ? null : sector.id;
         activeCategory = null;
-        isAnimating    = true;
+        isAnimating = true;
         animateDiamonds = (activeSector === 'mecanizada'); // only animate diamonds on fresh open
         renderHub();
-        isAnimating    = false;
+        isAnimating = false;
         animateDiamonds = false;
       };
 
@@ -843,14 +953,14 @@
 
       const node = document.createElement('div');
       node.className = 'cat-diamond' + (animateDiamonds ? ' animate-diamond-reveal' : '');
-      node.style.left             = x + 'px';
-      node.style.top              = y + 'px';
-      node.style.width            = size + 'px';
-      node.style.height           = size + 'px';
-      node.style.borderColor      = data.color;
-      node.style.boxShadow        = isActive ? `0 6px 20px ${data.color}45` : `0 3px 10px ${data.color}20`;
-      node.style.opacity          = isDimmed ? '0.35' : '1';
-      node.style.animationDelay   = delay + 'ms';
+      node.style.left = x + 'px';
+      node.style.top = y + 'px';
+      node.style.width = size + 'px';
+      node.style.height = size + 'px';
+      node.style.borderColor = data.color;
+      node.style.boxShadow = isActive ? `0 6px 20px ${data.color}45` : `0 3px 10px ${data.color}20`;
+      node.style.opacity = isDimmed ? '0.35' : '1';
+      node.style.animationDelay = delay + 'ms';
       if (isActive) node.style.transform = 'translate(-50%,-50%) rotate(45deg) scale(1.1)';
 
       node.innerHTML = `
@@ -861,18 +971,18 @@
 
       node.onclick = (e) => {
         e.stopPropagation();
-        activeCategory  = isActive ? null : catId;
-        isAnimating     = true;
+        activeCategory = isActive ? null : catId;
+        isAnimating = true;
         animateDiamonds = false; // diamonds already visible, don't re-animate
         renderHub();
-        isAnimating     = false;
+        isAnimating = false;
       };
 
       const label = document.createElement('div');
       label.className = 'node-label mt-5' + (animateDiamonds ? ' animate-label-reveal' : '');
-      label.style.left           = x + 'px';
-      label.style.top            = (y + 30) + 'px';
-      label.style.opacity        = isDimmed ? '0.35' : '1';
+      label.style.left = x + 'px';
+      label.style.top = (y + 30) + 'px';
+      label.style.opacity = isDimmed ? '0.35' : '1';
       label.style.animationDelay = (delay + 60) + 'ms';
       label.innerHTML = `
         <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
@@ -897,11 +1007,11 @@
     // ── Sub-items list ───────────────────────────────────────────────
 
     function createSubItemsList(x, startY, cat) {
-      const container  = document.createElement('div');
+      const container = document.createElement('div');
       container.className = 'sub-items-container';
       container.style.position = 'absolute';
       container.style.left = (x - 120) + 'px';
-      const topOffset  = startY + 95;
+      const topOffset = startY + 95;
       container.style.top = topOffset + 'px';
 
       cat.items.forEach((item, idx) => {
@@ -941,7 +1051,7 @@
     // ── Main render ──────────────────────────────────────────────────
 
     function renderHub() {
-      svgLayer.innerHTML      = '';
+      svgLayer.innerHTML = '';
       nodesContainer.innerHTML = '';
       dimensions = { w: window.innerWidth, h: window.innerHeight };
       const isMobile = dimensions.w < 768;
@@ -949,25 +1059,25 @@
       const virtualWidth = isMobile ? Math.max(dimensions.w, 900) : dimensions.w;
       const cx = virtualWidth / 2;
 
-      const centerY       = dimensions.h * 0.25;
-      const centerRadius  = 62;
+      const centerY = dimensions.h * 0.25;
+      const centerRadius = 62;
       const centerBottomY = centerY + centerRadius;
 
       const centerNode = document.getElementById('center-node');
       if (centerNode) {
         centerNode.style.left = cx + 'px';
-        centerNode.style.top  = centerY + 'px';
+        centerNode.style.top = centerY + 'px';
       }
 
       const appContainer = document.getElementById('app');
       let requiredHeight = dimensions.h;
 
       // ── Level 1: Sector nodes ──
-      const sectorSpread  = isMobile ? 0.75 : 0.45;
-      const sectorTotalW  = virtualWidth * sectorSpread;
-      const sectorStartX  = (virtualWidth - sectorTotalW) / 2;
+      const sectorSpread = isMobile ? 0.75 : 0.45;
+      const sectorTotalW = virtualWidth * sectorSpread;
+      const sectorStartX = (virtualWidth - sectorTotalW) / 2;
       const sectorSpacing = sectorTotalW / (sectors.length - 1);
-      const sectorY       = centerY + 200;
+      const sectorY = centerY + 200;
 
       sectors.forEach((sector, i) => {
         const sx = sectorStartX + i * sectorSpacing;
@@ -979,18 +1089,18 @@
 
       // ── Level 2: Category nodes (only when MECANIZADA is active) ──
       if (activeSector === 'mecanizada') {
-        const mecIdx     = sectors.findIndex(s => s.id === 'mecanizada');
-        const mecX       = sectorStartX + mecIdx * sectorSpacing;
+        const mecIdx = sectors.findIndex(s => s.id === 'mecanizada');
+        const mecX = sectorStartX + mecIdx * sectorSpacing;
         const mecBottomY = sectorY + 22;
 
-        const catSpread  = isMobile ? 0.85 : 0.50;
-        const catTotalW  = virtualWidth * catSpread;
-        const catStartX  = (virtualWidth - catTotalW) / 2;
+        const catSpread = isMobile ? 0.85 : 0.50;
+        const catTotalW = virtualWidth * catSpread;
+        const catStartX = (virtualWidth - catTotalW) / 2;
         const catSpacing = catTotalW / (menuData.length - 1);
-        const categoryY  = sectorY + 195;
+        const categoryY = sectorY + 195;
 
         menuData.forEach((cat, i) => {
-          const catX      = catStartX + i * catSpacing;
+          const catX = catStartX + i * catSpacing;
           const lineColor = (activeCategory === cat.id || activeCategory === null)
             ? cat.color : '#cbd5e1';
 
@@ -1010,22 +1120,22 @@
 
       if (sectorY + 250 > requiredHeight) requiredHeight = sectorY + 250;
 
-      appContainer.style.minWidth  = virtualWidth + 'px';
+      appContainer.style.minWidth = virtualWidth + 'px';
       appContainer.style.minHeight = requiredHeight + 'px';
-      svgLayer.style.width         = virtualWidth + 'px';
-      svgLayer.style.height        = requiredHeight + 'px';
+      svgLayer.style.width = virtualWidth + 'px';
+      svgLayer.style.height = requiredHeight + 'px';
 
       feather.replace();
     }
 
     function resetHub() {
-      activeSector   = null;
+      activeSector = null;
       activeCategory = null;
       renderHub();
     }
 
     // ── Mobile render ─────────────────────────────────────────────────
-    let mActiveSector   = null;
+    let mActiveSector = null;
     let mActiveCategory = null;
 
     function renderMobile() {
@@ -1048,9 +1158,9 @@
 
         const line = document.createElement('div');
         line.className = 'm-connector';
-        line.style.height     = '32px';
+        line.style.height = '32px';
         line.style.background = isActive ? sector.color : '#cbd5e1';
-        line.style.opacity    = isDimmed ? '0.3' : '1';
+        line.style.opacity = isDimmed ? '0.3' : '1';
         hub.appendChild(line);
 
         const sectorRow = document.createElement('div');
@@ -1059,15 +1169,15 @@
         const pill = document.createElement('div');
         pill.className = 'm-sector-pill';
         pill.style.borderColor = sector.color;
-        pill.style.color       = isActive ? '#fff' : sector.color;
-        pill.style.background  = isActive ? sector.color : '#fff';
-        pill.style.opacity     = isDimmed ? '0.35' : '1';
-        pill.style.boxShadow   = isActive ? `0 4px 18px ${sector.color}40` : `0 2px 8px ${sector.color}15`;
-        pill.textContent       = sector.label;
+        pill.style.color = isActive ? '#fff' : sector.color;
+        pill.style.background = isActive ? sector.color : '#fff';
+        pill.style.opacity = isDimmed ? '0.35' : '1';
+        pill.style.boxShadow = isActive ? `0 4px 18px ${sector.color}40` : `0 2px 8px ${sector.color}15`;
+        pill.textContent = sector.label;
         pill.onclick = (e) => {
           e.stopPropagation();
           if (sector.id !== 'mecanizada') { showToast('Setor em Desenvolvimento'); return; }
-          mActiveSector   = isActive ? null : sector.id;
+          mActiveSector = isActive ? null : sector.id;
           mActiveCategory = null;
           renderMobile();
         };
@@ -1076,7 +1186,7 @@
         if (sector.id === 'mecanizada') {
           const subLine = document.createElement('div');
           subLine.className = 'm-connector';
-          subLine.style.height     = isActive ? '24px' : '0';
+          subLine.style.height = isActive ? '24px' : '0';
           subLine.style.background = sector.color;
           subLine.style.transition = 'height 0.4s ease';
           sectorRow.appendChild(subLine);
@@ -1089,9 +1199,9 @@
             const isCatActive = mActiveCategory === cat.id;
             const catCard = document.createElement('div');
             catCard.className = 'm-cat-card';
-            catCard.style.borderColor    = cat.color;
-            catCard.style.boxShadow      = isCatActive ? `0 4px 16px ${cat.color}40` : `0 2px 8px ${cat.color}18`;
-            catCard.style.background     = isCatActive ? cat.color + '0d' : '#fff';
+            catCard.style.borderColor = cat.color;
+            catCard.style.boxShadow = isCatActive ? `0 4px 16px ${cat.color}40` : `0 2px 8px ${cat.color}18`;
+            catCard.style.background = isCatActive ? cat.color + '0d' : '#fff';
             catCard.style.animationDelay = (ci * 60) + 'ms';
             catCard.innerHTML = `
               <i data-feather="${cat.icon}" style="color:${cat.color};width:22px;height:22px;"></i>
@@ -1115,7 +1225,7 @@
             if (activeCat) {
               const subLine2 = document.createElement('div');
               subLine2.className = 'm-connector';
-              subLine2.style.height     = '20px';
+              subLine2.style.height = '20px';
               subLine2.style.background = activeCat.color;
               sectorRow.appendChild(subLine2);
 
@@ -1180,7 +1290,7 @@
       startX = e.touches[0].pageX - document.documentElement.scrollLeft;
       startY = e.touches[0].pageY - document.documentElement.scrollTop;
       scrollLeft = document.documentElement.scrollLeft;
-      scrollTop  = document.documentElement.scrollTop;
+      scrollTop = document.documentElement.scrollTop;
     }, { passive: true });
 
     appContainer.addEventListener('touchmove', (e) => {
@@ -1188,8 +1298,8 @@
       const x = e.touches[0].pageX - startX;
       const y = e.touches[0].pageY - startY;
       window.scrollTo(
-        Math.min(Math.max(scrollLeft - x, 0), document.documentElement.scrollWidth  - window.innerWidth),
-        Math.min(Math.max(scrollTop  - y, 0), document.documentElement.scrollHeight - window.innerHeight)
+        Math.min(Math.max(scrollLeft - x, 0), document.documentElement.scrollWidth - window.innerWidth),
+        Math.min(Math.max(scrollTop - y, 0), document.documentElement.scrollHeight - window.innerHeight)
       );
     }, { passive: true });
 
@@ -1202,13 +1312,13 @@
     // On hover the particles are gently pushed away from the cursor.
     (function () {
       const canvas = document.getElementById('bg-canvas');
-      const ctx    = canvas.getContext('2d');
+      const ctx = canvas.getContext('2d');
       let W, H;
       const COUNT = 120;
       const mouse = { x: -9999, y: -9999 };
 
       function resize() {
-        W = canvas.width  = window.innerWidth;
+        W = canvas.width = window.innerWidth;
         H = canvas.height = window.innerHeight;
       }
 
@@ -1224,17 +1334,17 @@
       class Particle {
         constructor() { this.spawn(true); }
         spawn(init) {
-          this.x  = Math.random() * W;
-          this.y  = init ? Math.random() * H : -5;
+          this.x = Math.random() * W;
+          this.y = init ? Math.random() * H : -5;
           this.vx = (Math.random() - 0.5) * 0.35;
           this.vy = (Math.random() - 0.5) * 0.35;
-          this.r  = Math.random() * 1.2 + 0.4;
-          this.alpha = Math.random() * 0.20 + 0.12;
+          this.r = Math.random() * 1.2 + 0.4;
+          this.alpha = Math.random() * 0.30 + 0.25;
         }
         update() {
           // Mouse repulsion
-          const dx   = this.x - mouse.x;
-          const dy   = this.y - mouse.y;
+          const dx = this.x - mouse.x;
+          const dy = this.y - mouse.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < 110 && dist > 0) {
             const f = (110 - dist) / 110;
@@ -1253,10 +1363,10 @@
           // Regenerate from a random edge when off-screen
           if (this.x < -20 || this.x > W + 20 || this.y < -20 || this.y > H + 20) {
             const edge = Math.floor(Math.random() * 4);
-            if (edge === 0) { this.x = Math.random() * W; this.y = -5; this.vx = (Math.random()-0.5)*0.35; this.vy = Math.random()*0.3+0.1; }
-            else if (edge === 1) { this.x = W+5; this.y = Math.random()*H; this.vx = -(Math.random()*0.3+0.1); this.vy = (Math.random()-0.5)*0.35; }
-            else if (edge === 2) { this.x = Math.random()*W; this.y = H+5; this.vx = (Math.random()-0.5)*0.35; this.vy = -(Math.random()*0.3+0.1); }
-            else { this.x = -5; this.y = Math.random()*H; this.vx = Math.random()*0.3+0.1; this.vy = (Math.random()-0.5)*0.35; }
+            if (edge === 0) { this.x = Math.random() * W; this.y = -5; this.vx = (Math.random() - 0.5) * 0.35; this.vy = Math.random() * 0.3 + 0.1; }
+            else if (edge === 1) { this.x = W + 5; this.y = Math.random() * H; this.vx = -(Math.random() * 0.3 + 0.1); this.vy = (Math.random() - 0.5) * 0.35; }
+            else if (edge === 2) { this.x = Math.random() * W; this.y = H + 5; this.vx = (Math.random() - 0.5) * 0.35; this.vy = -(Math.random() * 0.3 + 0.1); }
+            else { this.x = -5; this.y = Math.random() * H; this.vx = Math.random() * 0.3 + 0.1; this.vy = (Math.random() - 0.5) * 0.35; }
             this.r = Math.random() * 1.2 + 0.4;
             this.alpha = Math.random() * 0.20 + 0.12;
           }
@@ -1264,7 +1374,7 @@
         draw() {
           ctx.beginPath();
           ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(71, 85, 105, ${this.alpha})`;
+          ctx.fillStyle = `rgba(30, 41, 59, ${this.alpha})`;
           ctx.fill();
         }
       }
@@ -1272,14 +1382,14 @@
       function drawLines(pts) {
         for (let i = 0; i < pts.length; i++) {
           for (let j = i + 1; j < pts.length; j++) {
-            const dx   = pts[i].x - pts[j].x;
-            const dy   = pts[i].y - pts[j].y;
+            const dx = pts[i].x - pts[j].x;
+            const dy = pts[i].y - pts[j].y;
             const dist = Math.sqrt(dx * dx + dy * dy);
             if (dist < 100) {
               ctx.beginPath();
               ctx.moveTo(pts[i].x, pts[i].y);
               ctx.lineTo(pts[j].x, pts[j].y);
-              ctx.strokeStyle = `rgba(71, 85, 105, ${(1 - dist / 100) * 0.18})`;
+              ctx.strokeStyle = `rgba(30, 41, 59, ${(1 - dist / 100) * 0.35})`;
               ctx.lineWidth = 0.8;
               ctx.stroke();
             }
