@@ -4,8 +4,10 @@
  * Pode ser injetado em qualquer projeto (Urbana, Mecanizada, Gesta De Força, etc.)
  */
 
-// Usando o path de arquivo local para simular o roteamento na máquina
-const SGE_CENTRAL_URL = "file:///c:/Users/Warlison Abreu/Desktop/CODIGOS/SGE_Central";
+// URL da Central SGE (SSO Login Page)
+// Em produção (GitHub Pages), usar o link do repositório SGE-CENTRAL
+const SGE_CENTRAL_URL = window.SGE_CENTRAL_URL_OVERRIDE
+    || "https://grupogps-mecanizada.github.io/SGE-CENTRAL";
 
 class SgeAuthSDK {
     constructor(appSlug) {
