@@ -6,7 +6,6 @@
  *   1. SSO redirect → Central SGE para autenticação
  *   2. TOKEN REVALIDATION — verifica com servidor se usuário ainda está ativo
  *   3. BYPASS mode — login local via Supabase Auth (fallback)
- *   4. Heartbeat (desabilitado até edge function existir)
  * 
  * Para ativar o bypass, defina window.SGE_SSO_BYPASS = true ANTES de carregar este script.
  */
@@ -21,7 +20,6 @@ class SgeAuthSDK {
     constructor(appSlug) {
         this.appSlug = appSlug;
         this.storageKey = `sge_token_${this.appSlug}`;
-        this.pulseInterval = null;
         this._log('SDK v3 inicializado', { appSlug, bypass: this.isBypass() });
     }
 
@@ -61,12 +59,12 @@ class SgeAuthSDK {
     async checkAuth() {
         this._log('Verificando autenticação...');
 
-        // 2.1 Token recebido via URL (retornando do SSO)
+        // 2.1 Token from URL (returning from SSO)
         const urlParams = new URLSearchParams(window.location.search);
         const tokenFromUrl = urlParams.get('sso_token');
 
         if (tokenFromUrl) {
-            this._log('Token SSO recebido via URL — validando com servidor...');
+            this._log('Token SSO recebido via URL');
             localStorage.setItem(this.storageKey, tokenFromUrl);
             window.history.replaceState({}, document.title, window.location.pathname);
 
@@ -78,13 +76,8 @@ class SgeAuthSDK {
                 return null;
             }
 
-            // Validate with server immediately
-            const valid = await this._revalidateWithServer(userData);
-            if (!valid) {
-                localStorage.removeItem(this.storageKey);
-                return null; // _revalidateWithServer handles the UI
-            }
-
+            // Token is fresh from SSO (just validated in Central) — trust it
+            this._log('✓ Autenticado via SSO redirect', { nome: userData.nome });
             return userData;
         }
 
@@ -107,91 +100,89 @@ class SgeAuthSDK {
             return null;
         }
 
-        // 2.4 REVALIDATE WITH SERVER — check if user is still active
+        // 2.4 REVALIDATE WITH SERVER — check if user still has access
         const valid = await this._revalidateWithServer(userData);
         if (!valid) {
             localStorage.removeItem(this.storageKey);
             return null;
         }
 
-        this._log('✓ Autenticado e validado', { nome: userData.nome, perfil: userData.perfil });
+        this._log('✓ Autenticado e revalidado', { nome: userData.nome, perfil: userData.perfil });
         return userData;
     }
 
-    // ========== 2.5 SERVER-SIDE REVALIDATION ==========
+    // ========== REVALIDATION via public views ==========
     async _revalidateWithServer(userData) {
         try {
             this._log('Revalidando com servidor...');
 
-            // Create a Supabase client to query RBAC tables
-            const rbacClient = window.supabase.createClient(SGE_SSO_SUPABASE_URL, SGE_SSO_ANON_KEY, {
-                db: { schema: 'gps_compartilhado' }
-            });
+            // Uses public views (no schema config needed)
+            const client = window.supabase.createClient(SGE_SSO_SUPABASE_URL, SGE_SSO_ANON_KEY);
 
-            // Check 1: Is the USER globally active?
-            const { data: userRecord, error: userErr } = await rbacClient
-                .from('sge_central_usuarios')
+            // Check 1: Is USER globally active?
+            const { data: userRecord, error: userErr } = await client
+                .from('v_sso_usuarios')
                 .select('id, is_active')
                 .eq('id', userData.id)
                 .single();
 
             if (userErr || !userRecord) {
-                this._warn('Usuário não encontrado no SGE Central');
+                this._warn('Usuário não encontrado no SGE Central', userErr);
                 this._showAccessRevoked('Seu cadastro não foi encontrado no sistema de governança.');
                 return false;
             }
 
             if (!userRecord.is_active) {
-                this._warn('BLOQUEADO: Conta desativada pelo administrador');
-                this._showAccessRevoked('Sua conta foi <strong>bloqueada</strong> pelo administrador do SGE Central.');
+                this._warn('BLOQUEADO: Conta desativada');
+                this._showAccessRevoked('Sua conta foi <strong>bloqueada</strong> pelo administrador.');
                 return false;
             }
 
-            // Check 2: Find the system
-            const { data: sysRecord, error: sysErr } = await rbacClient
-                .from('sge_central_sistemas')
+            // Check 2: Is SYSTEM active?
+            const { data: sysRecord, error: sysErr } = await client
+                .from('v_sso_sistemas')
                 .select('id, nome, is_active')
                 .eq('slug', this.appSlug)
                 .single();
 
             if (sysErr || !sysRecord) {
-                // System not registered — allow access (backward compatibility)
-                this._log('Sistema não registrado no RBAC — acesso permitido por padrão');
+                // System not registered — allow (backward compatibility)
+                this._log('Sistema não registrado no RBAC — acesso permitido');
                 return true;
             }
 
             if (!sysRecord.is_active) {
                 this._warn('Sistema desativado');
-                this._showAccessRevoked(`O sistema <strong>${sysRecord.nome}</strong> foi desativado pelo administrador.`);
+                this._showAccessRevoked(`O sistema <strong>${sysRecord.nome}</strong> foi desativado.`);
                 return false;
             }
 
-            // Check 3: Does the user have ACCESS to this system?
-            const { data: accessRecord, error: accessErr } = await rbacClient
-                .from('sge_central_usuario_sistema_acesso')
+            // Check 3: Does USER have ACCESS?
+            const { data: accessRecord, error: accessErr } = await client
+                .from('v_sso_acesso')
                 .select('id, is_active')
                 .eq('usuario_id', userData.id)
                 .eq('sistema_id', sysRecord.id)
                 .single();
 
             if (accessErr || !accessRecord) {
-                this._warn('Sem registro de acesso para este sistema');
+                this._warn('Sem registro de acesso');
                 this._showAccessRevoked(`Você <strong>não possui acesso</strong> ao sistema <strong>${sysRecord.nome}</strong>.`);
                 return false;
             }
 
             if (!accessRecord.is_active) {
-                this._warn('Acesso revogado pelo administrador');
+                this._warn('Acesso revogado');
                 this._showAccessRevoked(`Seu acesso ao sistema <strong>${sysRecord.nome}</strong> foi <strong>revogado</strong>.`);
                 return false;
             }
 
-            this._log('✓ Revalidação OK — usuário ativo, acesso concedido');
+            this._log('✓ Revalidação OK');
             return true;
 
         } catch (err) {
-            // Network error — allow access to avoid blocking on connectivity issues
-            this._warn('Erro de rede na revalidação — acesso permitido por fallback', err.message);
+            // Network error — allow access to avoid blocking users
+            this._warn('Erro de rede na revalidação — permitido por fallback', err.message);
             return true;
         }
     }
@@ -201,8 +192,6 @@ class SgeAuthSDK {
         this._warn('Exibindo tela de acesso revogado');
         localStorage.removeItem(this.storageKey);
 
-        // Hide all app content and show access denied
-        const appContent = document.getElementById('app') || document.body;
         const overlay = document.createElement('div');
         overlay.id = 'sge-access-denied';
         overlay.style.cssText = `
@@ -221,35 +210,28 @@ class SgeAuthSDK {
                     <line x1="12" y1="8" x2="12" y2="12"/>
                     <line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>
-                <h2 style="font-size:20px; font-weight:800; color:#d64545; margin-bottom:8px;">
-                    Acesso Negado
-                </h2>
+                <h2 style="font-size:20px; font-weight:800; color:#d64545; margin-bottom:8px;">Acesso Negado</h2>
                 <p style="font-size:14px; color:#5a6676; line-height:1.6; margin-bottom:24px;">
-                    ${reason}<br><br>
-                    Entre em contato com o administrador do SGE Central.
+                    ${reason}<br><br>Contate o administrador do SGE Central.
                 </p>
                 <div style="display:flex; gap:10px; justify-content:center;">
                     <button onclick="window.history.back()" 
                             style="padding:10px 20px; background:#f3f4f6; border:1px solid #d1d5db; 
-                                   border-radius:8px; cursor:pointer; font-size:14px; color:#4b5563;">
-                        ← Voltar
-                    </button>
+                                   border-radius:8px; cursor:pointer; font-size:14px; color:#4b5563;">← Voltar</button>
                     <button onclick="localStorage.removeItem('${this.storageKey}'); window.location.reload();"
                             style="padding:10px 20px; background:#d64545; color:#fff; border:none; 
-                                   border-radius:8px; cursor:pointer; font-size:14px; font-weight:600;">
-                        Trocar Conta
-                    </button>
+                                   border-radius:8px; cursor:pointer; font-size:14px; font-weight:600;">Trocar Conta</button>
                 </div>
             </div>
             <div style="position:absolute; bottom:24px; font-size:11px; color:#94a3b8; 
                         text-transform:uppercase; letter-spacing:0.05em;">
-                SGE Central — Controle de Acesso RBAC · Grupo GPS
+                SGE Central — RBAC · Grupo GPS
             </div>
         `;
         document.body.appendChild(overlay);
     }
 
-    // ========== 3. JWT DECODER ==========
+    // ========== JWT DECODER ==========
     decodeToken(token) {
         try {
             const base64Url = token.split('.')[1];
@@ -261,7 +243,6 @@ class SgeAuthSDK {
 
             const payload = JSON.parse(jsonPayload);
 
-            // Validate expiry
             if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
                 this._warn('Token JWT expirado');
                 return null;
@@ -274,15 +255,14 @@ class SgeAuthSDK {
         }
     }
 
-    // ========== 4. LOGOUT ==========
+    // ========== LOGOUT ==========
     logout() {
         this._log('Logout SSO');
         localStorage.removeItem(this.storageKey);
-        if (this.pulseInterval) clearInterval(this.pulseInterval);
         this.redirectToLogin();
     }
 
-    // ========== 5. GET USER ==========
+    // ========== GET USER ==========
     getUser() {
         const token = localStorage.getItem(this.storageKey);
         if (!token) return null;
@@ -290,5 +270,4 @@ class SgeAuthSDK {
     }
 }
 
-// Expose globally
 window.SgeAuthSDK = SgeAuthSDK;
