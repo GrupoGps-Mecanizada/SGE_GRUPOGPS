@@ -1,53 +1,60 @@
 /**
- * SGE IDENTITY PROVIDER (SSO) SDK v3
+ * SGE IDENTITY PROVIDER (SSO) SDK v4
  * Ponte entre qualquer sistema satélite e a Central SGE.
  * 
  * FEATURES:
  *   1. SSO redirect → Central SGE para autenticação
- *   2. TOKEN REVALIDATION — verifica com servidor se usuário ainda está ativo
+ *   2. TOKEN REVALIDATION via REST API direta (Accept-Profile: gps_compartilhado)
  *   3. BYPASS mode — login local via Supabase Auth (fallback)
  * 
- * Para ativar o bypass, defina window.SGE_SSO_BYPASS = true ANTES de carregar este script.
+ * Para ativar o bypass: window.SGE_SSO_BYPASS = true
  */
 
 const SGE_CENTRAL_URL = window.SGE_CENTRAL_URL_OVERRIDE
     || "https://grupogps-mecanizada.github.io/SGE-CENTRAL";
 
-const SGE_SSO_SUPABASE_URL = "https://mgcjidryrjqiceielmzp.supabase.co";
-const SGE_SSO_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nY2ppZHJ5cmpxaWNlaWVsbXpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMjEwNzEsImV4cCI6MjA4NzY5NzA3MX0.UAKkzy5fMIkrlmnqz9E9KknUw9xhoYpa3f1ptRpOuAA";
+const SGE_SSO_API = "https://mgcjidryrjqiceielmzp.supabase.co";
+const SGE_SSO_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nY2ppZHJ5cmpxaWNlaWVsbXpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMjEwNzEsImV4cCI6MjA4NzY5NzA3MX0.UAKkzy5fMIkrlmnqz9E9KknUw9xhoYpa3f1ptRpOuAA";
+
+// Direct REST helper — bypasses Supabase client schema issues
+async function _ssoFetch(table, params) {
+    const url = new URL(`${SGE_SSO_API}/rest/v1/${table}`);
+    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+    const resp = await fetch(url.toString(), {
+        headers: {
+            'apikey': SGE_SSO_KEY,
+            'Authorization': `Bearer ${SGE_SSO_KEY}`,
+            'Accept': 'application/vnd.pgrst.object+json',
+            'Accept-Profile': 'gps_compartilhado'
+        }
+    });
+    if (!resp.ok) return null;
+    return await resp.json();
+}
 
 class SgeAuthSDK {
     constructor(appSlug) {
         this.appSlug = appSlug;
         this.storageKey = `sge_token_${this.appSlug}`;
-        this._log('SDK v3 inicializado', { appSlug, bypass: this.isBypass() });
+        this._log('SDK v4 inicializado', { appSlug, bypass: this.isBypass() });
     }
 
-    // ========== LOGGING ==========
     _log(msg, data) {
-        const prefix = `[SGE SSO][${this.appSlug}]`;
-        if (data) console.log(`${prefix} ${msg}`, data);
-        else console.log(`${prefix} ${msg}`);
+        const p = `[SGE SSO][${this.appSlug}]`;
+        data ? console.log(`${p} ${msg}`, data) : console.log(`${p} ${msg}`);
     }
-
     _warn(msg, data) {
-        const prefix = `[SGE SSO][${this.appSlug}]`;
-        if (data) console.warn(`${prefix} ⚠ ${msg}`, data);
-        else console.warn(`${prefix} ⚠ ${msg}`);
+        const p = `[SGE SSO][${this.appSlug}]`;
+        data ? console.warn(`${p} ⚠ ${msg}`, data) : console.warn(`${p} ⚠ ${msg}`);
     }
 
-    // ========== BYPASS MODE ==========
-    isBypass() {
-        return window.SGE_SSO_BYPASS === true;
-    }
+    isBypass() { return window.SGE_SSO_BYPASS === true; }
 
-    // ========== 1. REDIRECT TO LOGIN ==========
     redirectToLogin() {
         if (this.isBypass()) {
-            this._log('BYPASS ativado — login local via Supabase Auth');
+            this._log('BYPASS ativado');
             return 'BYPASS';
         }
-
         const returnUrl = encodeURIComponent(window.location.href);
         const targetUrl = `${SGE_CENTRAL_URL}/?app_slug=${this.appSlug}&redirect=${returnUrl}`;
         this._log('Redirecionando para Central SGE', { targetUrl });
@@ -55,11 +62,11 @@ class SgeAuthSDK {
         return 'REDIRECT';
     }
 
-    // ========== 2. CHECK AUTH (com revalidação server-side) ==========
+    // ========== CHECK AUTH (async, com revalidação) ==========
     async checkAuth() {
         this._log('Verificando autenticação...');
 
-        // 2.1 Token from URL (returning from SSO)
+        // Token from URL (returning from SSO)
         const urlParams = new URLSearchParams(window.location.search);
         const tokenFromUrl = urlParams.get('sso_token');
 
@@ -67,113 +74,96 @@ class SgeAuthSDK {
             this._log('Token SSO recebido via URL');
             localStorage.setItem(this.storageKey, tokenFromUrl);
             window.history.replaceState({}, document.title, window.location.pathname);
-
             const userData = this.decodeToken(tokenFromUrl);
             if (!userData) {
-                this._warn('Token da URL inválido');
                 localStorage.removeItem(this.storageKey);
                 this.redirectToLogin();
                 return null;
             }
-
-            // Token is fresh from SSO (just validated in Central) — trust it
-            this._log('✓ Autenticado via SSO redirect', { nome: userData.nome });
+            // Fresh from SSO — already validated
+            this._log('✓ Autenticado via SSO', { nome: userData.nome });
             return userData;
         }
 
-        // 2.2 Token from LocalStorage
-        const tokenFromStorage = localStorage.getItem(this.storageKey);
-        if (!tokenFromStorage) {
+        // Token from storage
+        const token = localStorage.getItem(this.storageKey);
+        if (!token) {
             this._log('Nenhum token encontrado');
             if (this.isBypass()) return null;
             this.redirectToLogin();
             return null;
         }
 
-        // 2.3 Decode token
-        const userData = this.decodeToken(tokenFromStorage);
+        const userData = this.decodeToken(token);
         if (!userData) {
-            this._warn('Token inválido ou expirado. Limpando...');
+            this._warn('Token inválido/expirado');
             localStorage.removeItem(this.storageKey);
             if (this.isBypass()) return null;
             this.redirectToLogin();
             return null;
         }
 
-        // 2.4 REVALIDATE WITH SERVER — check if user still has access
-        const valid = await this._revalidateWithServer(userData);
+        // REVALIDATE with server
+        const valid = await this._revalidate(userData);
         if (!valid) {
             localStorage.removeItem(this.storageKey);
             return null;
         }
 
-        this._log('✓ Autenticado e revalidado', { nome: userData.nome, perfil: userData.perfil });
+        this._log('✓ Autenticado e revalidado', { nome: userData.nome });
         return userData;
     }
 
-    // ========== REVALIDATION via public views ==========
-    async _revalidateWithServer(userData) {
+    // ========== REVALIDATION via direct REST API ==========
+    async _revalidate(userData) {
         try {
             this._log('Revalidando com servidor...');
 
-            // Uses public views (no schema config needed)
-            const client = window.supabase.createClient(SGE_SSO_SUPABASE_URL, SGE_SSO_ANON_KEY);
+            // Check 1: User active?
+            const user = await _ssoFetch('sge_central_usuarios', {
+                'select': 'id,is_active',
+                'id': `eq.${userData.id}`
+            });
 
-            // Check 1: Is USER globally active?
-            const { data: userRecord, error: userErr } = await client
-                .from('v_sso_usuarios')
-                .select('id, is_active')
-                .eq('id', userData.id)
-                .single();
-
-            if (userErr || !userRecord) {
-                this._warn('Usuário não encontrado no SGE Central', userErr);
-                this._showAccessRevoked('Seu cadastro não foi encontrado no sistema de governança.');
+            if (!user) {
+                this._warn('Usuário não encontrado');
+                this._showBlocked('Seu cadastro não foi encontrado.');
+                return false;
+            }
+            if (!user.is_active) {
+                this._warn('Conta bloqueada');
+                this._showBlocked('Sua conta foi <strong>bloqueada</strong> pelo administrador.');
                 return false;
             }
 
-            if (!userRecord.is_active) {
-                this._warn('BLOQUEADO: Conta desativada');
-                this._showAccessRevoked('Sua conta foi <strong>bloqueada</strong> pelo administrador.');
-                return false;
-            }
+            // Check 2: System active?
+            const sys = await _ssoFetch('sge_central_sistemas', {
+                'select': 'id,nome,is_active',
+                'slug': `eq.${this.appSlug}`
+            });
 
-            // Check 2: Is SYSTEM active?
-            const { data: sysRecord, error: sysErr } = await client
-                .from('v_sso_sistemas')
-                .select('id, nome, is_active')
-                .eq('slug', this.appSlug)
-                .single();
-
-            if (sysErr || !sysRecord) {
-                // System not registered — allow (backward compatibility)
-                this._log('Sistema não registrado no RBAC — acesso permitido');
+            if (!sys) {
+                this._log('Sistema não registrado — permitido');
                 return true;
             }
-
-            if (!sysRecord.is_active) {
-                this._warn('Sistema desativado');
-                this._showAccessRevoked(`O sistema <strong>${sysRecord.nome}</strong> foi desativado.`);
+            if (!sys.is_active) {
+                this._showBlocked(`O sistema <strong>${sys.nome}</strong> foi desativado.`);
                 return false;
             }
 
-            // Check 3: Does USER have ACCESS?
-            const { data: accessRecord, error: accessErr } = await client
-                .from('v_sso_acesso')
-                .select('id, is_active')
-                .eq('usuario_id', userData.id)
-                .eq('sistema_id', sysRecord.id)
-                .single();
+            // Check 3: Access active?
+            const access = await _ssoFetch('sge_central_usuario_sistema_acesso', {
+                'select': 'id,is_active',
+                'usuario_id': `eq.${userData.id}`,
+                'sistema_id': `eq.${sys.id}`
+            });
 
-            if (accessErr || !accessRecord) {
-                this._warn('Sem registro de acesso');
-                this._showAccessRevoked(`Você <strong>não possui acesso</strong> ao sistema <strong>${sysRecord.nome}</strong>.`);
+            if (!access) {
+                this._showBlocked(`Você <strong>não tem acesso</strong> a <strong>${sys.nome}</strong>.`);
                 return false;
             }
-
-            if (!accessRecord.is_active) {
-                this._warn('Acesso revogado');
-                this._showAccessRevoked(`Seu acesso ao sistema <strong>${sysRecord.nome}</strong> foi <strong>revogado</strong>.`);
+            if (!access.is_active) {
+                this._showBlocked(`Seu acesso a <strong>${sys.nome}</strong> foi <strong>revogado</strong>.`);
                 return false;
             }
 
@@ -181,92 +171,48 @@ class SgeAuthSDK {
             return true;
 
         } catch (err) {
-            // Network error — allow access to avoid blocking users
-            this._warn('Erro de rede na revalidação — permitido por fallback', err.message);
+            this._warn('Erro de rede — permitido por fallback', err.message);
             return true;
         }
     }
 
-    // ========== ACCESS REVOKED SCREEN ==========
-    _showAccessRevoked(reason) {
-        this._warn('Exibindo tela de acesso revogado');
+    _showBlocked(reason) {
         localStorage.removeItem(this.storageKey);
-
-        const overlay = document.createElement('div');
-        overlay.id = 'sge-access-denied';
-        overlay.style.cssText = `
-            position:fixed; inset:0; z-index:99999;
-            background: radial-gradient(ellipse at 50% 30%, #fef2f2 0%, #fee2e2 60%, #fecaca 100%);
-            display:flex; flex-direction:column; align-items:center; justify-content:center;
-            font-family: 'Inter', sans-serif;
-        `;
-        overlay.innerHTML = `
-            <div style="background:#fff; border:1px solid rgba(214,69,69,0.15); border-radius:16px; 
-                        padding:40px; max-width:420px; width:90%; text-align:center;
-                        box-shadow:0 4px 18px rgba(214,69,69,0.07);">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d64545" 
-                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:16px;">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                    <line x1="12" y1="8" x2="12" y2="12"/>
-                    <line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
-                <h2 style="font-size:20px; font-weight:800; color:#d64545; margin-bottom:8px;">Acesso Negado</h2>
-                <p style="font-size:14px; color:#5a6676; line-height:1.6; margin-bottom:24px;">
-                    ${reason}<br><br>Contate o administrador do SGE Central.
-                </p>
-                <div style="display:flex; gap:10px; justify-content:center;">
-                    <button onclick="window.history.back()" 
-                            style="padding:10px 20px; background:#f3f4f6; border:1px solid #d1d5db; 
-                                   border-radius:8px; cursor:pointer; font-size:14px; color:#4b5563;">← Voltar</button>
-                    <button onclick="localStorage.removeItem('${this.storageKey}'); window.location.reload();"
-                            style="padding:10px 20px; background:#d64545; color:#fff; border:none; 
-                                   border-radius:8px; cursor:pointer; font-size:14px; font-weight:600;">Trocar Conta</button>
-                </div>
-            </div>
-            <div style="position:absolute; bottom:24px; font-size:11px; color:#94a3b8; 
-                        text-transform:uppercase; letter-spacing:0.05em;">
-                SGE Central — RBAC · Grupo GPS
-            </div>
-        `;
-        document.body.appendChild(overlay);
+        const o = document.createElement('div');
+        o.style.cssText = 'position:fixed;inset:0;z-index:99999;background:radial-gradient(ellipse at 50% 30%,#fef2f2,#fee2e2 60%,#fecaca);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:Inter,sans-serif';
+        o.innerHTML = `<div style="background:#fff;border:1px solid rgba(214,69,69,.15);border-radius:16px;padding:40px;max-width:420px;width:90%;text-align:center;box-shadow:0 4px 18px rgba(214,69,69,.07)">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d64545" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:16px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <h2 style="font-size:20px;font-weight:800;color:#d64545;margin-bottom:8px">Acesso Negado</h2>
+            <p style="font-size:14px;color:#5a6676;line-height:1.6;margin-bottom:24px">${reason}<br><br>Contate o administrador do SGE Central.</p>
+            <div style="display:flex;gap:10px;justify-content:center">
+                <button onclick="window.history.back()" style="padding:10px 20px;background:#f3f4f6;border:1px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:14px;color:#4b5563">← Voltar</button>
+                <button onclick="localStorage.removeItem('${this.storageKey}');window.location.reload()" style="padding:10px 20px;background:#d64545;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">Trocar Conta</button>
+            </div></div>
+            <div style="position:absolute;bottom:24px;font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em">SGE Central — RBAC v4</div>`;
+        document.body.appendChild(o);
     }
 
-    // ========== JWT DECODER ==========
     decodeToken(token) {
         try {
-            const base64Url = token.split('.')[1];
-            if (!base64Url) return null;
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-
-            const payload = JSON.parse(jsonPayload);
-
-            if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
-                this._warn('Token JWT expirado');
-                return null;
-            }
-
+            const b = token.split('.')[1];
+            if (!b) return null;
+            const json = decodeURIComponent(atob(b.replace(/-/g, '+').replace(/_/g, '/')).split('').map(c =>
+                '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+            ).join(''));
+            const payload = JSON.parse(json);
+            if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
             return payload.user;
-        } catch (e) {
-            this._warn('Falha ao decodificar token', e);
-            return null;
-        }
+        } catch (e) { return null; }
     }
 
-    // ========== LOGOUT ==========
     logout() {
-        this._log('Logout SSO');
         localStorage.removeItem(this.storageKey);
         this.redirectToLogin();
     }
 
-    // ========== GET USER ==========
     getUser() {
-        const token = localStorage.getItem(this.storageKey);
-        if (!token) return null;
-        return this.decodeToken(token);
+        const t = localStorage.getItem(this.storageKey);
+        return t ? this.decodeToken(t) : null;
     }
 }
 
