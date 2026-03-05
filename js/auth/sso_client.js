@@ -85,8 +85,7 @@ class SgeAuthSDK {
                 }
             }
 
-            // Clean up any stale SSO-related query params in the URL
-            this._cleanUrl();
+            // NOTE: Do NOT call _cleanUrl() here — checkAuth() needs to read sso_token from URL first
 
         } catch (e) {
             // localStorage might be blocked (incognito, security settings)
