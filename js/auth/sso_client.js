@@ -4,8 +4,9 @@
  * 
  * FEATURES:
  *   1. SSO redirect → Central SGE para autenticação
- *   2. TOKEN REVALIDATION via REST API direta (Accept-Profile: gps_compartilhado)
- *   3. BYPASS mode — login local via Supabase Auth (fallback)
+ *   2. TOKEN REVALIDATION via public views (v_sso_*)
+ *   3. PROFILE SYNC — atualiza perfil do servidor em cada revalidação
+ *   4. BYPASS mode — login local via Supabase Auth (fallback)
  * 
  * Para ativar o bypass: window.SGE_SSO_BYPASS = true
  */
@@ -16,7 +17,7 @@ const SGE_CENTRAL_URL = window.SGE_CENTRAL_URL_OVERRIDE
 const SGE_SSO_API = "https://mgcjidryrjqiceielmzp.supabase.co";
 const SGE_SSO_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nY2ppZHJ5cmpxaWNlaWVsbXpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMjEwNzEsImV4cCI6MjA4NzY5NzA3MX0.UAKkzy5fMIkrlmnqz9E9KknUw9xhoYpa3f1ptRpOuAA";
 
-// Direct REST helper — bypasses Supabase client schema issues
+// Direct REST helper — queries public schema views (no Accept-Profile needed)
 async function _ssoFetch(table, params) {
     const url = new URL(`${SGE_SSO_API}/rest/v1/${table}`);
     Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
@@ -24,8 +25,7 @@ async function _ssoFetch(table, params) {
         headers: {
             'apikey': SGE_SSO_KEY,
             'Authorization': `Bearer ${SGE_SSO_KEY}`,
-            'Accept': 'application/vnd.pgrst.object+json',
-            'Accept-Profile': 'gps_compartilhado'
+            'Accept': 'application/vnd.pgrst.object+json'
         }
     });
     if (!resp.ok) return null;
@@ -62,11 +62,10 @@ class SgeAuthSDK {
         return 'REDIRECT';
     }
 
-    // ========== CHECK AUTH (async, com revalidação) ==========
     async checkAuth() {
         this._log('Verificando autenticação...');
 
-        // Token from URL (returning from SSO)
+        // Token from URL (returning from SSO — fresh, already validated)
         const urlParams = new URLSearchParams(window.location.search);
         const tokenFromUrl = urlParams.get('sso_token');
 
@@ -80,12 +79,11 @@ class SgeAuthSDK {
                 this.redirectToLogin();
                 return null;
             }
-            // Fresh from SSO — already validated
-            this._log('✓ Autenticado via SSO', { nome: userData.nome });
+            this._log('✓ Autenticado via SSO', { nome: userData.nome, perfil: userData.perfil });
             return userData;
         }
 
-        // Token from storage
+        // Token from storage — needs revalidation
         const token = localStorage.getItem(this.storageKey);
         if (!token) {
             this._log('Nenhum token encontrado');
@@ -103,24 +101,30 @@ class SgeAuthSDK {
             return null;
         }
 
-        // REVALIDATE with server
-        const valid = await this._revalidate(userData);
-        if (!valid) {
+        // REVALIDATE with server (also syncs profile)
+        const result = await this._revalidate(userData);
+        if (!result) {
             localStorage.removeItem(this.storageKey);
             return null;
         }
 
-        this._log('✓ Autenticado e revalidado', { nome: userData.nome });
+        // Update profile from server if it changed
+        if (result.perfil && result.perfil !== userData.perfil) {
+            this._log(`Perfil atualizado: ${userData.perfil} → ${result.perfil}`);
+            userData.perfil = result.perfil;
+        }
+
+        this._log('✓ Autenticado e revalidado', { nome: userData.nome, perfil: userData.perfil });
         return userData;
     }
 
-    // ========== REVALIDATION via direct REST API ==========
+    // Revalidation via public views — returns { perfil } on success, false on failure
     async _revalidate(userData) {
         try {
             this._log('Revalidando com servidor...');
 
             // Check 1: User active?
-            const user = await _ssoFetch('sge_central_usuarios', {
+            const user = await _ssoFetch('v_sso_usuarios', {
                 'select': 'id,is_active',
                 'id': `eq.${userData.id}`
             });
@@ -137,23 +141,23 @@ class SgeAuthSDK {
             }
 
             // Check 2: System active?
-            const sys = await _ssoFetch('sge_central_sistemas', {
+            const sys = await _ssoFetch('v_sso_sistemas', {
                 'select': 'id,nome,is_active',
                 'slug': `eq.${this.appSlug}`
             });
 
             if (!sys) {
                 this._log('Sistema não registrado — permitido');
-                return true;
+                return { perfil: userData.perfil };
             }
             if (!sys.is_active) {
                 this._showBlocked(`O sistema <strong>${sys.nome}</strong> foi desativado.`);
                 return false;
             }
 
-            // Check 3: Access active?
-            const access = await _ssoFetch('sge_central_usuario_sistema_acesso', {
-                'select': 'id,is_active',
+            // Check 3: Access active + get current profile
+            const access = await _ssoFetch('v_sso_acesso', {
+                'select': 'id,is_active,perfil_nome',
                 'usuario_id': `eq.${userData.id}`,
                 'sistema_id': `eq.${sys.id}`
             });
@@ -167,12 +171,12 @@ class SgeAuthSDK {
                 return false;
             }
 
-            this._log('✓ Revalidação OK');
-            return true;
+            this._log('✓ Revalidação OK', { perfil: access.perfil_nome });
+            return { perfil: access.perfil_nome || userData.perfil };
 
         } catch (err) {
             this._warn('Erro de rede — permitido por fallback', err.message);
-            return true;
+            return { perfil: userData.perfil };
         }
     }
 
