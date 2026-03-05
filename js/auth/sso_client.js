@@ -55,7 +55,9 @@ class SgeAuthSDK {
             this._log('BYPASS ativado');
             return 'BYPASS';
         }
-        const returnUrl = encodeURIComponent(window.location.href);
+        // Send only clean base URL (no hash, no query params) to avoid loop
+        const cleanUrl = window.location.origin + window.location.pathname;
+        const returnUrl = encodeURIComponent(cleanUrl);
         const targetUrl = `${SGE_CENTRAL_URL}/?app_slug=${this.appSlug}&redirect=${returnUrl}`;
         this._log('Redirecionando para Central SGE', { targetUrl });
         window.location.href = targetUrl;
@@ -65,14 +67,19 @@ class SgeAuthSDK {
     async checkAuth() {
         this._log('Verificando autenticação...');
 
-        // Token from URL (returning from SSO — fresh, already validated)
+        // Token from URL (returning from SSO — check both search and hash)
         const urlParams = new URLSearchParams(window.location.search);
-        const tokenFromUrl = urlParams.get('sso_token');
+        // Also check hash fragment (SPA routing: #page?sso_token=...)
+        const hashParts = window.location.hash.split('?');
+        const hashParams = hashParts.length > 1 ? new URLSearchParams(hashParts[1]) : null;
+        const tokenFromUrl = urlParams.get('sso_token') || (hashParams && hashParams.get('sso_token'));
 
         if (tokenFromUrl) {
             this._log('Token SSO recebido via URL');
             localStorage.setItem(this.storageKey, tokenFromUrl);
-            window.history.replaceState({}, document.title, window.location.pathname);
+            // Clean URL completely (remove token from search and hash)
+            const cleanPath = window.location.pathname;
+            window.history.replaceState({}, document.title, cleanPath);
             const userData = this.decodeToken(tokenFromUrl);
             if (!userData) {
                 localStorage.removeItem(this.storageKey);
